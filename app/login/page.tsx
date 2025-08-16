@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -10,19 +10,48 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, AlertCircle, Github, Twitter } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+
+// Password strength checker
+const getPasswordStrength = (password: string) => {
+  let score = 0
+  let feedback = []
+
+  if (password.length >= 8) score += 1
+  else feedback.push("At least 8 characters")
+
+  if (/[a-z]/.test(password)) score += 1
+  else feedback.push("Lowercase letter")
+
+  if (/[A-Z]/.test(password)) score += 1
+  else feedback.push("Uppercase letter")
+
+  if (/[0-9]/.test(password)) score += 1
+  else feedback.push("Number")
+
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+  else feedback.push("Special character")
+
+  if (score <= 2) return { score, level: "Weak", color: "bg-red-500", feedback }
+  if (score <= 3) return { score, level: "Fair", color: "bg-yellow-500", feedback }
+  if (score <= 4) return { score, level: "Good", color: "bg-blue-500", feedback }
+  return { score, level: "Strong", color: "bg-green-500", feedback }
+}
 
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth()
   
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUpLoading, setIsSignUpLoading] = useState(false)
+  const [demoMode, setDemoMode] = useState(false)
   
   // Form state
   const [loginForm, setLoginForm] = useState({
@@ -40,26 +69,121 @@ export default function LoginPage() {
     agreeToTerms: false
   })
 
+  // Form validation
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
+  const [passwordStrength, setPasswordStrength] = useState(getPasswordStrength(""))
+
+  // Check if Supabase is configured
+  const isSupabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && 
+                               process.env.NEXT_PUBLIC_SUPABASE_URL.length > 0
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      router.push("/dashboard")
+    }
+  }, [isAuthenticated, authLoading, router])
+
+  // Update password strength when password changes
+  useEffect(() => {
+    setPasswordStrength(getPasswordStrength(signUpForm.password))
+  }, [signUpForm.password])
+
+  // Validate form fields
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors }
+    
+    switch (field) {
+      case 'email':
+        if (!value) {
+          newErrors[field] = 'Email is required'
+        } else if (!/\S+@\S+\.\S+/.test(value)) {
+          newErrors[field] = 'Please enter a valid email'
+        } else {
+          delete newErrors[field]
+        }
+        break
+      case 'password':
+        if (!value) {
+          newErrors[field] = 'Password is required'
+        } else if (value.length < 8) {
+          newErrors[field] = 'Password must be at least 8 characters'
+        } else {
+          delete newErrors[field]
+        }
+        break
+      case 'firstName':
+      case 'lastName':
+        if (!value) {
+          newErrors[field] = `${field === 'firstName' ? 'First name' : 'Last name'} is required`
+        } else {
+          delete newErrors[field]
+        }
+        break
+      case 'confirmPassword':
+        if (!value) {
+          newErrors[field] = 'Please confirm your password'
+        } else if (value !== signUpForm.password) {
+          newErrors[field] = 'Passwords do not match'
+        } else {
+          delete newErrors[field]
+        }
+        break
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   // Handle login form changes
   const handleLoginChange = (field: string, value: string | boolean) => {
     setLoginForm(prev => ({ ...prev, [field]: value }))
+    if (typeof value === 'string' && errors[field]) {
+      validateField(field, value)
+    }
   }
 
   // Handle signup form changes
   const handleSignUpChange = (field: string, value: string | boolean) => {
     setSignUpForm(prev => ({ ...prev, [field]: value }))
+    if (typeof value === 'string' && errors[field]) {
+      validateField(field, value)
+    }
   }
 
   // Handle login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    const isEmailValid = validateField('email', loginForm.email)
+    const isPasswordValid = validateField('password', loginForm.password)
+    
+    if (!isEmailValid || !isPasswordValid) return
+
+    if (demoMode) {
+      // Demo mode - simulate successful login
+      toast({
+        title: "Demo Mode",
+        description: "This is a demo. In production, you would be logged in.",
+      })
+      setTimeout(() => router.push("/dashboard"), 1500)
+      return
+    }
+
+    if (!isSupabaseConfigured) {
+      toast({
+        title: "Configuration Error",
+        description: "Authentication is not configured. Please contact support.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginForm.email,
-        password: loginForm.password,
-      })
+      const { error } = await signIn(loginForm.email, loginForm.password)
 
       if (error) {
         toast({
@@ -70,13 +194,11 @@ export default function LoginPage() {
         return
       }
 
-      if (data.user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        })
-        router.push("/dashboard")
-      }
+      // Success - redirect will happen automatically via useEffect
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      })
     } catch (error) {
       toast({
         title: "Login failed",
@@ -92,6 +214,17 @@ export default function LoginPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validate all fields
+    const validations = [
+      validateField('firstName', signUpForm.firstName),
+      validateField('lastName', signUpForm.lastName),
+      validateField('email', signUpForm.email),
+      validateField('password', signUpForm.password),
+      validateField('confirmPassword', signUpForm.confirmPassword)
+    ]
+    
+    if (validations.some(v => !v)) return
+
     if (signUpForm.password !== signUpForm.confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -110,20 +243,31 @@ export default function LoginPage() {
       return
     }
 
+    if (demoMode) {
+      // Demo mode - simulate successful signup
+      toast({
+        title: "Demo Mode",
+        description: "This is a demo. In production, your account would be created.",
+      })
+      setTimeout(() => router.push("/dashboard"), 1500)
+      return
+    }
+
+    if (!isSupabaseConfigured) {
+      toast({
+        title: "Configuration Error",
+        description: "Authentication is not configured. Please contact support.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSignUpLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: signUpForm.email,
-        password: signUpForm.password,
-        options: {
-          data: {
-            full_name: `${signUpForm.firstName} ${signUpForm.lastName}`,
-            first_name: signUpForm.firstName,
-            last_name: signUpForm.lastName,
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
+      const { data, error } = await signUp(signUpForm.email, signUpForm.password, {
+        first_name: signUpForm.firstName,
+        last_name: signUpForm.lastName
       })
 
       if (error) {
@@ -156,6 +300,32 @@ export default function LoginPage() {
     } finally {
       setIsSignUpLoading(false)
     }
+  }
+
+  // Demo login
+  const handleDemoLogin = () => {
+    setDemoMode(true)
+    setLoginForm({
+      email: "demo@example.com",
+      password: "demo123456",
+      rememberMe: false
+    })
+    toast({
+      title: "Demo Mode Enabled",
+      description: "Use demo@example.com / demo123456 to test the login.",
+    })
+  }
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -216,6 +386,16 @@ export default function LoginPage() {
             </p>
             <p className="text-sm text-gray-500 mt-2">- Sarah Chen, Software Engineer</p>
           </div>
+
+          {/* Demo Mode Notice */}
+          {!isSupabaseConfigured && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Demo Mode:</strong> Authentication is not configured. Use demo credentials to test the interface.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Right Side - Auth Forms */}
@@ -230,6 +410,18 @@ export default function LoginPage() {
               </div>
               <CardTitle className="font-serif text-2xl">Welcome back</CardTitle>
               <CardDescription>Sign in to continue your interview preparation journey</CardDescription>
+              
+              {/* Demo Mode Button */}
+              {!isSupabaseConfigured && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDemoLogin}
+                  className="mt-2"
+                >
+                  Try Demo Mode
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="space-y-4">
@@ -248,12 +440,19 @@ export default function LoginPage() {
                           id="email" 
                           type="email" 
                           placeholder="Enter your email" 
-                          className="pl-10" 
+                          className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
                           value={loginForm.email}
                           onChange={(e) => handleLoginChange("email", e.target.value)}
+                          onBlur={(e) => validateField("email", e.target.value)}
                           required 
                         />
                       </div>
+                      {errors.email && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.email}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
@@ -263,9 +462,10 @@ export default function LoginPage() {
                           id="password"
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
-                          className="pl-10 pr-10"
+                          className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                           value={loginForm.password}
                           onChange={(e) => handleLoginChange("password", e.target.value)}
+                          onBlur={(e) => validateField("password", e.target.value)}
                           required
                         />
                         <Button
@@ -278,6 +478,12 @@ export default function LoginPage() {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
+                      {errors.password && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.password}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -319,7 +525,7 @@ export default function LoginPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="gap-2 bg-transparent">
+                    <Button variant="outline" className="gap-2 bg-transparent hover:bg-gray-50">
                       <svg className="h-4 w-4" viewBox="0 0 24 24">
                         <path
                           fill="currentColor"
@@ -340,11 +546,9 @@ export default function LoginPage() {
                       </svg>
                       Google
                     </Button>
-                    <Button variant="outline" className="gap-2 bg-transparent">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      Facebook
+                    <Button variant="outline" className="gap-2 bg-transparent hover:bg-gray-50">
+                      <Github className="h-4 w-4" />
+                      GitHub
                     </Button>
                   </div>
                 </TabsContent>
@@ -359,22 +563,37 @@ export default function LoginPage() {
                           <Input 
                             id="firstName" 
                             placeholder="John" 
-                            className="pl-10" 
+                            className={`pl-10 ${errors.firstName ? 'border-red-500' : ''}`}
                             value={signUpForm.firstName}
                             onChange={(e) => handleSignUpChange("firstName", e.target.value)}
+                            onBlur={(e) => validateField("firstName", e.target.value)}
                             required 
                           />
                         </div>
+                        {errors.firstName && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.firstName}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name</Label>
                         <Input 
                           id="lastName" 
                           placeholder="Doe" 
+                          className={errors.lastName ? 'border-red-500' : ''}
                           value={signUpForm.lastName}
                           onChange={(e) => handleSignUpChange("lastName", e.target.value)}
+                          onBlur={(e) => validateField("lastName", e.target.value)}
                           required 
                         />
+                        {errors.lastName && (
+                          <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.lastName}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -385,12 +604,19 @@ export default function LoginPage() {
                           id="signupEmail"
                           type="email"
                           placeholder="Enter your email"
-                          className="pl-10"
+                          className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
                           value={signUpForm.email}
                           onChange={(e) => handleSignUpChange("email", e.target.value)}
+                          onBlur={(e) => validateField("email", e.target.value)}
                           required
                         />
                       </div>
+                      {errors.email && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.email}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signupPassword">Password</Label>
@@ -400,9 +626,10 @@ export default function LoginPage() {
                           id="signupPassword"
                           type={showPassword ? "text" : "password"}
                           placeholder="Create a password"
-                          className="pl-10 pr-10"
+                          className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                           value={signUpForm.password}
                           onChange={(e) => handleSignUpChange("password", e.target.value)}
+                          onBlur={(e) => validateField("password", e.target.value)}
                           required
                         />
                         <Button
@@ -415,6 +642,34 @@ export default function LoginPage() {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
+                      
+                      {/* Password Strength Indicator */}
+                      {signUpForm.password && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Password strength:</span>
+                            <span className={`font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                              {passwordStrength.level}
+                            </span>
+                          </div>
+                          <Progress value={passwordStrength.score * 20} className="h-2" />
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            {passwordStrength.feedback.map((item, index) => (
+                              <div key={index} className="flex items-center gap-1">
+                                <div className={`w-2 h-2 rounded-full ${passwordStrength.score >= index + 1 ? passwordStrength.color : 'bg-gray-300'}`} />
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {errors.password && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.password}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -424,9 +679,10 @@ export default function LoginPage() {
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
-                          className="pl-10 pr-10"
+                          className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
                           value={signUpForm.confirmPassword}
                           onChange={(e) => handleSignUpChange("confirmPassword", e.target.value)}
+                          onBlur={(e) => validateField("confirmPassword", e.target.value)}
                           required
                         />
                         <Button
@@ -439,6 +695,12 @@ export default function LoginPage() {
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {errors.confirmPassword}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox 
@@ -483,7 +745,7 @@ export default function LoginPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="gap-2 bg-transparent">
+                    <Button variant="outline" className="gap-2 bg-transparent hover:bg-gray-50">
                       <svg className="h-4 w-4" viewBox="0 0 24 24">
                         <path
                           fill="currentColor"
@@ -504,11 +766,9 @@ export default function LoginPage() {
                       </svg>
                       Google
                     </Button>
-                    <Button variant="outline" className="gap-2 bg-transparent">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      Facebook
+                    <Button variant="outline" className="gap-2 bg-transparent hover:bg-gray-50">
+                      <Github className="h-4 w-4" />
+                      GitHub
                     </Button>
                   </div>
                 </TabsContent>

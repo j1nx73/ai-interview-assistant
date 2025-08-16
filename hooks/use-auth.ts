@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { db } from '@/lib/supabase/database'
-import { UserProfile } from '@/lib/supabase/database'
+import { dbClient, UserProfile } from '@/lib/supabase/database-client'
 
 interface AuthState {
   user: User | null
@@ -36,7 +35,7 @@ export function useAuth() {
 
         if (session?.user) {
           // Fetch user profile
-          const profile = await db.getUserProfile(session.user.id)
+          const profile = await dbClient.getUserProfile(session.user.id)
           setAuthState({
             user: session.user,
             session,
@@ -72,7 +71,7 @@ export function useAuth() {
         
         if (session?.user) {
           // Fetch user profile
-          const profile = await db.getUserProfile(session.user.id)
+          const profile = await dbClient.getUserProfile(session.user.id)
           setAuthState({
             user: session.user,
             session,
@@ -176,7 +175,7 @@ export function useAuth() {
     }
 
     try {
-      const profile = await db.updateUserProfile(authState.user.id, updates)
+      const profile = await dbClient.updateUserProfile(authState.user.id, updates)
       
       if (profile) {
         setAuthState(prev => ({ ...prev, profile }))
@@ -216,7 +215,7 @@ export function useAuth() {
     if (!authState.user) return
 
     try {
-      const profile = await db.getUserProfile(authState.user.id)
+      const profile = await dbClient.getUserProfile(authState.user.id)
       setAuthState(prev => ({ ...prev, profile }))
     } catch (error) {
       console.error('Error refreshing profile:', error)

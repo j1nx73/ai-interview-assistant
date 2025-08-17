@@ -400,7 +400,7 @@ export default function LoginPage() {
                     <div className="space-y-3">
                       <Label htmlFor="login-email" className="text-sm font-medium text-foreground/80">Email Address</Label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                        <Mail className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="login-email"
                           type="email"
@@ -429,7 +429,7 @@ export default function LoginPage() {
                     <div className="space-y-3">
                       <Label htmlFor="login-password" className="text-sm font-medium text-foreground/80">Password</Label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                        <Lock className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="login-password"
                           type={showPassword ? "text" : "password"}
@@ -445,7 +445,7 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
+                          className="absolute right-4 top-4 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
@@ -511,7 +511,7 @@ export default function LoginPage() {
                       <div className="space-y-3">
                         <Label htmlFor="signup-firstname" className="text-sm font-medium text-foreground/80">First Name</Label>
                         <div className="relative group">
-                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                          <User className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                           <Input
                             id="signup-firstname"
                             type="text"
@@ -540,7 +540,7 @@ export default function LoginPage() {
                       <div className="space-y-3">
                         <Label htmlFor="signup-lastname" className="text-sm font-medium text-foreground/80">Last Name</Label>
                         <div className="relative group">
-                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                          <User className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                           <Input
                             id="signup-lastname"
                             type="text"
@@ -570,7 +570,7 @@ export default function LoginPage() {
                     <div className="space-y-3">
                       <Label htmlFor="signup-email" className="text-sm font-medium text-foreground/80">Email Address</Label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                        <Mail className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-email"
                           type="email"
@@ -599,7 +599,7 @@ export default function LoginPage() {
                     <div className="space-y-3">
                       <Label htmlFor="signup-password" className="text-sm font-medium text-foreground/80">Password</Label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                        <Lock className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-password"
                           type={showPassword ? "text" : "password"}
@@ -615,7 +615,7 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
+                          className="absolute right-4 top-4 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
                           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
@@ -665,7 +665,7 @@ export default function LoginPage() {
                     <div className="space-y-3">
                       <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground/80">Confirm Password</Label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                        <Lock className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-confirm-password"
                           type={showConfirmPassword ? "text" : "password"}
@@ -681,7 +681,7 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
+                          className="absolute right-4 top-4 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
                           {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>

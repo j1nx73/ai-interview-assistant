@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 interface PageTransitionProps {
   children: React.ReactNode
@@ -12,48 +12,61 @@ export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingText, setLoadingText] = useState("Loading...")
+  const previousPathname = useRef(pathname)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   useEffect(() => {
-    setIsLoading(true)
+    console.log('PageTransition: pathname changed', { 
+      previous: previousPathname.current, 
+      current: pathname,
+      willShowLoading: previousPathname.current !== pathname && previousPathname.current !== ''
+    })
     
-    // Set different loading messages for different page types
-    const pageType = pathname.split('/')[1] || 'home'
-    const messages = {
-      'dashboard': 'Loading Dashboard...',
-      'chat-bot': 'Opening Chat...',
-      'resume-analysis': 'Loading Resume Analysis...',
-      'speech-analysis': 'Loading Speech Analysis...',
-      'profile': 'Loading Profile...',
-      'settings': 'Loading Settings...',
-      'train': 'Loading Training...',
-      'export': 'Loading Export...',
-      'progress': 'Loading Progress...',
-      'home': 'Loading...',
-      'login': 'Loading Login...'
+    // Only show loading if we're actually navigating to a different page
+    if (previousPathname.current !== pathname && previousPathname.current !== '') {
+      console.log('PageTransition: Showing loading animation')
+      setIsNavigating(true)
+      setIsLoading(true)
+      
+      // Set different loading messages for different page types
+      const pageType = pathname.split('/')[1] || 'home'
+      const messages = {
+        'dashboard': 'Loading Dashboard...',
+        'chat-bot': 'Opening Chat...',
+        'resume-analysis': 'Loading Resume Analysis...',
+        'speech-analysis': 'Loading Speech Analysis...',
+        'profile': 'Loading Profile...',
+        'settings': 'Loading Settings...',
+        'train': 'Loading Training...',
+        'export': 'Loading Export...',
+        'progress': 'Loading Progress...',
+        'home': 'Loading...',
+        'login': 'Loading Login...'
+      }
+      
+      setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
+      
+      // Show loading for a reasonable time to give user feedback
+      const timer = setTimeout(() => {
+        console.log('PageTransition: Hiding loading animation')
+        setIsLoading(false)
+        setIsNavigating(false)
+      }, 800)
+      
+      return () => clearTimeout(timer)
     }
     
-    setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
-    
-    // Show loading for longer to give better user feedback
-    const timer = setTimeout(() => setIsLoading(false), 800)
-    return () => clearTimeout(timer)
+    // Update the previous pathname
+    previousPathname.current = pathname
   }, [pathname])
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ 
-          duration: 0.3, 
-          ease: [0.4, 0, 0.2, 1]
-        }}
-        className="min-h-full"
-      >
+    <>
+      {/* Loading Overlay */}
+      <AnimatePresence>
         {isLoading && (
           <motion.div
+            key="loading-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -62,7 +75,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.6, type: "spring" }}
+              transition={{ duration: 0.5, type: "spring" }}
               className="flex flex-col items-center gap-6"
             >
               {/* Enhanced Loading Spinner */}
@@ -97,7 +110,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
                 className="text-center"
               >
                 <motion.p
@@ -111,7 +124,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
                   className="text-sm text-muted-foreground"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.4 }}
                 >
                   Please wait while we prepare your page...
                 </motion.p>
@@ -134,15 +147,21 @@ export default function PageTransition({ children }: PageTransitionProps) {
             </motion.div>
           </motion.div>
         )}
-        
+      </AnimatePresence>
+      
+      {/* Page Content */}
+      <AnimatePresence mode="wait">
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2, delay: 0.1 }}
+          key={pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="min-h-full"
         >
           {children}
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   )
 }

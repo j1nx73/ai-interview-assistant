@@ -424,16 +424,7 @@ export default function LoginPage() {
     
           </motion.div>
           
-          {/* Debug Info - Remove this in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              <div>Auth Status: {isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}</div>
-              <div>Loading: {authLoading ? '🔄 Yes' : '✅ No'}</div>
-              <div>Supabase: {isSupabaseConfigured ? '✅ Configured' : '❌ Not Configured'}</div>
-              <div>User: {user ? '✅ Set' : '❌ Not Set'}</div>
-              <div>Session: {session ? '✅ Set' : '❌ Not Set'}</div>
-            </div>
-          )}
+
           
           <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
             <CardHeader className="space-y-1 pb-6">

@@ -44,7 +44,8 @@ export class GoogleCloudSpeechService {
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializationPromise = this.initializeClient();
+    // Don't initialize automatically to prevent build-time issues
+    // Initialization will happen when waitForReady() is called
   }
 
   private async initializeClient(): Promise<void> {
@@ -75,6 +76,10 @@ export class GoogleCloudSpeechService {
    * Wait for the service to be ready
    */
   async waitForReady(): Promise<void> {
+    if (!this.initializationPromise) {
+      this.initializationPromise = this.initializeClient();
+    }
+    
     if (this.initializationPromise) {
       await this.initializationPromise;
     }

@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { speechService } from '@/lib/google-cloud-speech';
+
+// Lazy load the speech service to prevent build-time initialization issues
+let speechService: any = null;
+
+async function getSpeechService() {
+  if (!speechService) {
+    try {
+      const { speechService: service } = await import('@/lib/google-cloud-speech');
+      speechService = service;
+    } catch (error) {
+      console.error('Failed to load Google Cloud Speech service:', error);
+      throw new Error('Speech service not available');
+    }
+  }
+  return speechService;
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Get speech service lazily
+    const speechService = await getSpeechService();
+    
     // Wait for speech service to be ready
     try {
       await speechService.waitForReady();
@@ -161,6 +179,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // Get speech service lazily
+    const speechService = await getSpeechService();
+    
     // Check if service is ready
     let status;
     try {

@@ -151,19 +151,6 @@ export default function PageTransition({ children }: PageTransitionProps) {
         )}
       </AnimatePresence>
       
-      {/* Test Button - Remove this in production */}
-      <div className="fixed top-4 right-4 z-40">
-        <button
-          onClick={() => {
-            setIsLoading(true)
-            setTimeout(() => setIsLoading(false), 2000)
-          }}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
-        >
-          Test Loading
-        </button>
-      </div>
-      
       {/* Page Content */}
       <AnimatePresence mode="wait">
         <motion.div

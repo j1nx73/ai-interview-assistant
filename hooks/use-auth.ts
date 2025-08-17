@@ -118,24 +118,37 @@ export function useAuth() {
 
   const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string }) => {
     try {
+      console.log('Starting signup process in useAuth...')
+      console.log('Email:', email)
+      console.log('Metadata:', metadata)
+      
       setAuthState(prev => ({ ...prev, loading: true, error: null }))
+      
+      // Check if Supabase is properly configured
+      if (!supabase.auth) {
+        throw new Error('Supabase authentication is not properly configured')
+      }
       
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata,
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          data: metadata
+          // Removed emailRedirectTo to avoid redirect issues
         }
       })
 
+      console.log('Supabase signup response:', { data, error })
+
       if (error) {
+        console.error('Supabase signup error:', error)
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }))
         return { error }
       }
 
       // Create user profile if signup was successful
       if (data.user) {
+        console.log('User created successfully, creating profile...')
         try {
           const profile = await dbClient.createUserProfile({
             id: data.user.id,
@@ -152,6 +165,7 @@ export function useAuth() {
           })
 
           if (profile) {
+            console.log('User profile created successfully')
             setAuthState(prev => ({ ...prev, profile, loading: false }))
           } else {
             console.warn('User profile creation failed - this may be due to missing database tables')
@@ -166,6 +180,7 @@ export function useAuth() {
 
       return { data }
     } catch (error) {
+      console.error('Signup exception in useAuth:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
       setAuthState(prev => ({ ...prev, error: errorMessage, loading: false }))
       return { error: { message: errorMessage } }

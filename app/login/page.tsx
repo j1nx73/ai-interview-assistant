@@ -110,6 +110,7 @@ export default function LoginPage() {
         try {
           const status = await dbClient.checkDatabaseStatus()
           setDatabaseStatus(status)
+          console.log('Database status:', status)
         } catch (error) {
           console.error('Error checking database status:', error)
         }
@@ -117,6 +118,33 @@ export default function LoginPage() {
     }
     
     checkDatabase()
+  }, [isSupabaseConfigured])
+
+  // Test Supabase connection
+  useEffect(() => {
+    const testSupabaseConnection = async () => {
+      if (isSupabaseConfigured) {
+        try {
+          console.log('Testing Supabase connection...')
+          console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+          console.log('SUPABASE_ANON_KEY length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length)
+          
+          // Test basic connection
+          const { createClient } = await import('@/lib/supabase/client')
+          const supabase = createClient()
+          
+          if (supabase.auth) {
+            console.log('Supabase auth is available')
+          } else {
+            console.error('Supabase auth is not available')
+          }
+        } catch (error) {
+          console.error('Supabase connection test failed:', error)
+        }
+      }
+    }
+    
+    testSupabaseConnection()
   }, [isSupabaseConfigured])
 
   // Check if user is already authenticated
@@ -150,7 +178,7 @@ export default function LoginPage() {
       case 'email':
         if (!value) {
           newErrors[field] = 'Email is required'
-        } else if (!/\S+@\S+\.\S+/.test(value)) {
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           newErrors[field] = 'Please enter a valid email address'
         } else {
           delete newErrors[field]
@@ -243,6 +271,9 @@ export default function LoginPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('Starting signup process...')
+    console.log('Form data:', signUpForm)
+    
     // Validate all fields
     const fields = ['firstName', 'lastName', 'email', 'password', 'confirmPassword']
     let isValid = true
@@ -258,11 +289,15 @@ export default function LoginPage() {
       isValid = false
     }
     
-    if (!isValid) return
+    if (!isValid) {
+      console.log('Form validation failed:', errors)
+      return
+    }
 
     setIsSignUpLoading(true)
     
     try {
+      console.log('Calling signUp function...')
       const result = await signUp(
         signUpForm.email, 
         signUpForm.password,
@@ -272,13 +307,17 @@ export default function LoginPage() {
         }
       )
       
+      console.log('SignUp result:', result)
+      
       if (result.error) {
+        console.error('SignUp error:', result.error)
         toast({
           title: "Sign Up Failed",
-          description: result.error.message,
+          description: result.error.message || "An error occurred during signup. Please try again.",
           variant: "destructive",
         })
       } else {
+        console.log('SignUp successful!')
         setSuccessMessage("Account created successfully! Please check your email to verify your account.")
         setShowSuccess(true)
         
@@ -299,9 +338,10 @@ export default function LoginPage() {
         }, 5000)
       }
     } catch (error) {
+      console.error('SignUp exception:', error)
       toast({
         title: "Sign Up Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         variant: "destructive",
       })
     } finally {

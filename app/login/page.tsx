@@ -73,6 +73,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUpLoading, setIsSignUpLoading] = useState(false)
   const [demoMode, setDemoMode] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
   
   // Form state
   const [loginForm, setLoginForm] = useState({
@@ -100,10 +101,12 @@ export default function LoginPage() {
 
   // Check if user is already authenticated
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
+    if (isAuthenticated && !authLoading && !redirecting) {
+      setRedirecting(true)
+      console.log('User authenticated, redirecting to dashboard...')
       router.push("/dashboard")
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, router, redirecting])
 
   // Update password strength when password changes
   useEffect(() => {
@@ -194,10 +197,8 @@ export default function LoginPage() {
         })
         setErrors({})
         
-        // Redirect to dashboard
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1500)
+        // Let the useEffect handle the redirect instead of manual redirect
+        console.log('Login successful, waiting for auth state update...')
       }
     } catch (error) {
       toast({

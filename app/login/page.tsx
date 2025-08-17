@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, Github, Twitter, Sparkles } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
 // Password strength checker
@@ -204,14 +204,6 @@ export default function LoginPage() {
         
         // Let the useEffect handle the redirect instead of manual redirect
         console.log('Login successful, waiting for auth state update...')
-        
-        // Fallback redirect in case the auth state doesn't update immediately
-        setTimeout(() => {
-          if (!redirecting) {
-            console.log('Fallback redirect to dashboard...')
-            router.push("/dashboard")
-          }
-        }, 2000)
       }
     } catch (error) {
       toast({

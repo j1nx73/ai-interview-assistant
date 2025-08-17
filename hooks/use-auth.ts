@@ -121,6 +121,18 @@ export function useAuth() {
         return { error }
       }
 
+      // Update auth state with the new session data
+      if (data.session && data.user) {
+        console.log('Login successful, updating auth state...')
+        setAuthState({
+          user: data.user,
+          session: data.session,
+          profile: null, // Will be fetched by the auth state change listener
+          loading: false,
+          error: null
+        })
+      }
+
       return { data }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'

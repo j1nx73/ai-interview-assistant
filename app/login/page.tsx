@@ -101,6 +101,8 @@ export default function LoginPage() {
 
   // Check if user is already authenticated
   useEffect(() => {
+    console.log('Login page useEffect - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'redirecting:', redirecting)
+    
     if (isAuthenticated && !authLoading && !redirecting) {
       setRedirecting(true)
       console.log('User authenticated, redirecting to dashboard...')
@@ -177,6 +179,8 @@ export default function LoginPage() {
     try {
       const result = await signIn(loginForm.email, loginForm.password)
       
+      console.log('Login result:', result)
+      
       if (result.error) {
         toast({
           title: "Login Failed",
@@ -184,6 +188,7 @@ export default function LoginPage() {
           variant: "destructive",
         })
       } else {
+        console.log('Login successful, result data:', result.data)
         toast({
           title: "Login Successful",
           description: "Redirecting to dashboard...",
@@ -199,6 +204,14 @@ export default function LoginPage() {
         
         // Let the useEffect handle the redirect instead of manual redirect
         console.log('Login successful, waiting for auth state update...')
+        
+        // Fallback redirect in case the auth state doesn't update immediately
+        setTimeout(() => {
+          if (!redirecting) {
+            console.log('Fallback redirect to dashboard...')
+            router.push("/dashboard")
+          }
+        }, 2000)
       }
     } catch (error) {
       toast({

@@ -50,15 +50,29 @@ export class GoogleCloudSpeechService {
 
   private async initializeClient(): Promise<void> {
     try {
-      // Check if GOOGLE_APPLICATION_CREDENTIALS environment variable is set
-      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        console.warn('GOOGLE_APPLICATION_CREDENTIALS not set. Please set the path to your service account key file.');
+      // Check if we have the required environment variables for Vercel deployment
+      if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_PRIVATE_KEY || !process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
+        console.warn('Google Cloud credentials not configured. Speech features will be disabled.');
+        console.warn('Set GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, and GOOGLE_CLOUD_CLIENT_EMAIL in Vercel environment variables.');
         return;
       }
 
+      // Create credentials object from environment variables (for Vercel deployment)
+      const credentials = {
+        type: 'service_account',
+        project_id: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLOUD_CLIENT_ID || '',
+        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+        token_uri: 'https://oauth2.googleapis.com/token',
+        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLOUD_CLIENT_EMAIL}`
+      };
+
       this.client = new SpeechClient({
-        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-        projectId: 'affable-framing-466420-r7', // Force the correct project ID
+        credentials,
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
       });
 
       // Test the connection
@@ -85,8 +99,15 @@ export class GoogleCloudSpeechService {
     }
     
     if (!this.isInitialized) {
-      throw new Error('Google Cloud Speech client failed to initialize. Please check your credentials.');
+      throw new Error('Google Cloud Speech service is not available. Please configure Google Cloud credentials in environment variables.');
     }
+  }
+
+  /**
+   * Check if the service is available
+   */
+  isServiceAvailable(): boolean {
+    return this.isInitialized;
   }
 
   /**
@@ -565,6 +586,3 @@ export class GoogleCloudSpeechService {
     }
   }
 }
-
-// Export a singleton instance
-export const speechService = new GoogleCloudSpeechService();

@@ -6,8 +6,8 @@ let speechService: any = null;
 async function getSpeechService() {
   if (!speechService) {
     try {
-      const { speechService: service } = await import('@/lib/google-cloud-speech');
-      speechService = service;
+      const { GoogleCloudSpeechService } = await import('@/lib/google-cloud-speech');
+      speechService = new GoogleCloudSpeechService();
     } catch (error) {
       console.error('Failed to load Google Cloud Speech service:', error);
       throw new Error('Speech service not available');
@@ -20,6 +20,18 @@ export async function POST(request: NextRequest) {
   try {
     // Get speech service lazily
     const speechService = await getSpeechService();
+    
+    // Check if service is available
+    if (!speechService.isServiceAvailable()) {
+      return NextResponse.json(
+        { 
+          error: 'Speech service not available',
+          message: 'Google Cloud Speech service is not configured. Please set GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, and GOOGLE_CLOUD_CLIENT_EMAIL environment variables.',
+          code: 'SERVICE_NOT_AVAILABLE'
+        },
+        { status: 503 }
+      );
+    }
     
     // Wait for speech service to be ready
     try {
@@ -181,6 +193,42 @@ export async function GET() {
   try {
     // Get speech service lazily
     const speechService = await getSpeechService();
+    
+    // Check if service is available
+    if (!speechService.isServiceAvailable()) {
+      return NextResponse.json({
+        service: 'Google Cloud Speech-to-Text',
+        status: { 
+          ready: false, 
+          message: 'Service not configured. Please set Google Cloud environment variables.' 
+        },
+        error: 'SERVICE_NOT_AVAILABLE',
+        message: 'Google Cloud Speech service is not configured. Please set GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, and GOOGLE_CLOUD_CLIENT_EMAIL environment variables.',
+        features: [
+          'High-quality speech recognition',
+          'Multiple language support',
+          'Automatic punctuation',
+          'Word-level timing',
+          'Confidence scoring',
+          'Speech pattern analysis',
+          'Speaking rate calculation',
+          'Pause analysis',
+        ],
+        limits: {
+          maxFileSize: '10MB',
+          supportedFormats: ['MP3', 'WAV', 'M4A', 'OGG'],
+          maxAudioLength: '60 minutes',
+        },
+        setup: {
+          required: [
+            'GOOGLE_CLOUD_PROJECT_ID',
+            'GOOGLE_CLOUD_PRIVATE_KEY', 
+            'GOOGLE_CLOUD_CLIENT_EMAIL'
+          ],
+          instructions: 'Set these environment variables in your Vercel dashboard to enable speech features.'
+        }
+      });
+    }
     
     // Check if service is ready
     let status;

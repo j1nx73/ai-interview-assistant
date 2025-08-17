@@ -201,25 +201,27 @@ export default function EnhancedChatPage() {
   }
 
   const createNewChatSession = async () => {
+    console.log('Creating new chat session...')
     try {
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('User status:', user ? 'authenticated' : 'not authenticated')
+      
+      const sessionId = generateUniqueId()
+      const sessionTitle = `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
+      console.log('New session ID:', sessionId)
+      
       if (!user) {
         // Create a local session for unauthenticated users
-        const sessionId = generateUniqueId()
-        const sessionTitle = `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-        
         setCurrentSessionId(sessionId)
         setMessages([])
         setChatSessions([])
         
         // Add welcome message
         addMessage("system", `Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. How can I assist you today? Note: You're in demo mode - chat history won't be saved until you sign in.`)
+        console.log('Local session created for unauthenticated user')
         return
       }
 
-      const sessionId = generateUniqueId()
-      const sessionTitle = `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-      
       // Try to create session in database, but continue if it fails
       try {
         const { error } = await supabase.from("chat_conversations").insert({
@@ -234,6 +236,8 @@ export default function EnhancedChatPage() {
           if (error.code === '42P01') {
             console.log("Chat conversations table doesn't exist yet - continuing without persistence")
           }
+        } else {
+          console.log('Database session created successfully')
         }
       } catch (dbError: any) {
         console.error("Database error creating session:", dbError)
@@ -242,7 +246,7 @@ export default function EnhancedChatPage() {
 
       setCurrentSessionId(sessionId)
       setMessages([])
-      loadChatSessions()
+      await loadChatSessions()
       
       // Add welcome message based on AI service status
       const welcomeMessage = aiServiceStatus === 'available' 
@@ -250,8 +254,11 @@ export default function EnhancedChatPage() {
         : "Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. Note: AI features are currently using enhanced local analysis. For full AI-powered responses, please ensure your Gemini API key is configured."
       
       addMessage("system", welcomeMessage)
+      console.log('New chat session created successfully')
     } catch (error) {
       console.error("Error creating new chat session:", error)
+      // Fallback welcome message
+      addMessage("system", "Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. How can I assist you today?")
     }
   }
 
@@ -361,11 +368,14 @@ export default function EnhancedChatPage() {
   }
 
   const analyzeResume = async () => {
+    console.log('Starting resume analysis...')
     if (!resumeText.trim()) {
+      console.log('No resume text provided')
       addMessage("ai", "Please provide your resume text to analyze.")
       return
     }
 
+    console.log('Resume text length:', resumeText.length)
     setIsResumeAnalyzing(true)
     addMessage("user", `Resume Analysis Request:\n\n${resumeText}`)
 
@@ -373,6 +383,7 @@ export default function EnhancedChatPage() {
       // Try to get AI-powered resume analysis
       let aiFeedback = ""
       try {
+        console.log('Attempting AI-powered analysis...')
         const response = await fetch('/api/gemini', {
           method: 'POST',
           headers: {
@@ -389,15 +400,20 @@ export default function EnhancedChatPage() {
 
         if (response.ok) {
           const result = await response.json()
+          console.log('AI analysis result:', result)
           if (result.feedback && !result.error) {
             aiFeedback = result.feedback
+            console.log('AI feedback received:', aiFeedback.length, 'characters')
           }
+        } else {
+          console.log('AI analysis failed with status:', response.status)
         }
       } catch (aiError) {
-        console.log('AI analysis not available, using enhanced local analysis')
+        console.log('AI analysis not available, using enhanced local analysis:', aiError)
       }
 
       // Enhanced local analysis
+      console.log('Performing local analysis...')
       const analysis = {
         wordCount: resumeText.split(/\s+/).length,
         hasContactInfo: /(email|phone|address|linkedin|github)/i.test(resumeText),
@@ -409,6 +425,8 @@ export default function EnhancedChatPage() {
         hasActionVerbs: /(developed|implemented|managed|led|created|designed|analyzed)/i.test(resumeText),
         suggestions: [] as string[]
       }
+
+      console.log('Local analysis results:', analysis)
 
       // Generate comprehensive suggestions
       if (!analysis.hasContactInfo) analysis.suggestions.push("Add professional contact information (email, phone, LinkedIn)")
@@ -427,6 +445,7 @@ export default function EnhancedChatPage() {
       if (!/(bullet|•|\-)/.test(resumeText)) analysis.suggestions.push("Use bullet points for better readability and ATS parsing")
 
       setResumeAnalysis(analysis)
+      console.log('Resume analysis completed, suggestions:', analysis.suggestions.length)
 
       // Combine AI feedback with local analysis
       let response = `**Resume Analysis Complete!** 📊\n\n**Word Count:** ${analysis.wordCount}\n**Contact Info:** ${analysis.hasContactInfo ? '✅' : '❌'}\n**Summary:** ${analysis.hasSummary ? '✅' : '❌'}\n**Experience:** ${analysis.hasExperience ? '✅' : '❌'}\n**Education:** ${analysis.hasEducation ? '✅' : '❌'}\n**Skills:** ${analysis.hasSkills ? '✅' : '❌'}\n**Achievements:** ${analysis.hasAchievements ? '✅' : '❌'}\n**Action Verbs:** ${analysis.hasActionVerbs ? '✅' : '❌'}\n\n**Key Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
@@ -439,25 +458,31 @@ export default function EnhancedChatPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       addMessage("ai", response)
+      console.log('Resume analysis response sent to chat')
     } catch (error) {
       console.error("Error analyzing resume:", error)
       addMessage("ai", "Sorry, there was an error analyzing your resume. Please try again.")
     } finally {
       setIsResumeAnalyzing(false)
+      console.log('Resume analysis completed')
     }
   }
 
   const analyzeSpeech = async () => {
+    console.log('Starting speech analysis...')
     if (!speechTranscript.trim()) {
+      console.log('No speech transcript provided')
       addMessage("ai", "Please provide speech content to analyze.")
       return
     }
 
+    console.log('Speech transcript length:', speechTranscript.length)
     setIsSpeechAnalyzing(true)
     addMessage("user", `Speech Analysis Request:\n\n${speechTranscript}`)
 
     try {
       // Enhanced speech analysis with more detailed metrics
+      console.log('Performing speech analysis...')
       const words = speechTranscript.split(/\s+/)
       const wordCount = words.length
       const estimatedDuration = Math.round(wordCount / 150)
@@ -507,6 +532,8 @@ export default function EnhancedChatPage() {
         suggestions: [] as string[]
       }
 
+      console.log('Speech analysis results:', analysis)
+
       // Generate personalized suggestions
       if (foundFillerWords.length > 0) {
         analysis.suggestions.push(`Reduce filler words: ${foundFillerWords.slice(0, 3).join(', ')}`)
@@ -535,6 +562,7 @@ export default function EnhancedChatPage() {
       }
 
       setSpeechAnalysis(analysis)
+      console.log('Speech analysis completed, suggestions:', analysis.suggestions.length)
 
       const response = `**Speech Analysis Complete!** 🎤\n\n**Performance Metrics:**\n• Word Count: ${analysis.wordCount}\n• Estimated Duration: ~${analysis.estimatedDuration} minutes\n• Speaking Rate: ${analysis.speakingRate} WPM ${analysis.isOptimalRate ? '✅' : '⚠️'}\n• Confidence Score: ${analysis.confidence}%\n\n**Analysis Results:**\n• Filler Words: ${analysis.fillerWordCount > 0 ? `⚠️ ${analysis.fillerWordCount} detected` : '✅ None detected'}\n• Structure: ${analysis.hasClearStructure ? '✅ Clear' : '⚠️ Could improve'}\n• Examples: ${analysis.hasExamples ? '✅ Good use' : '⚠️ Could add more'}\n• Confidence: ${analysis.hasConfidentPhrases ? '✅ Strong' : '⚠️ Could strengthen'}\n\n**Key Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}\n\n**Pro Tips for Interviews:**\n• Practice the STAR method for behavioral questions\n• Record yourself and review for improvement\n• Focus on breathing and pacing\n• Use power poses before speaking`
       
@@ -542,11 +570,13 @@ export default function EnhancedChatPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       addMessage("ai", response)
+      console.log('Speech analysis response sent to chat')
     } catch (error) {
       console.error("Error analyzing speech:", error)
       addMessage("ai", "Sorry, there was an error analyzing your speech. Please try again.")
     } finally {
       setIsSpeechAnalyzing(false)
+      console.log('Speech analysis completed')
     }
   }
 
@@ -643,13 +673,30 @@ export default function EnhancedChatPage() {
       if (response.ok) {
         const result = await response.json()
         setAiServiceStatus(result.hasGeminiKey ? 'available' : 'unavailable')
+        console.log('AI service status check result:', result)
       } else {
         setAiServiceStatus('unavailable')
+        console.log('AI service status check failed:', response.status)
       }
     } catch (error) {
       console.log('Could not check AI service status:', error)
       setAiServiceStatus('unavailable')
     }
+  }
+
+  // Test function to verify functionality
+  const testFeatures = () => {
+    console.log('=== Testing Chat Bot Features ===')
+    console.log('Current session ID:', currentSessionId)
+    console.log('Messages count:', messages.length)
+    console.log('Resume text length:', resumeText.length)
+    console.log('Speech transcript length:', speechTranscript.length)
+    console.log('AI service status:', aiServiceStatus)
+    console.log('Resume analysis state:', resumeAnalysis)
+    console.log('Speech analysis state:', speechAnalysis)
+    console.log('Is resume analyzing:', isResumeAnalyzing)
+    console.log('Is speech analyzing:', isSpeechAnalyzing)
+    console.log('================================')
   }
 
   return (
@@ -785,11 +832,21 @@ export default function EnhancedChatPage() {
                          aiServiceStatus === 'checking' ? 'Checking AI Service...' : 'AI Service Unavailable'}
                       </span>
                     </div>
-                    {aiServiceStatus === 'unavailable' && (
-                      <div className="text-xs text-muted-foreground">
-                        Using enhanced local analysis
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {aiServiceStatus === 'unavailable' && (
+                        <div className="text-xs text-muted-foreground">
+                          Using enhanced local analysis
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={testFeatures}
+                        className="text-xs h-6 px-2"
+                      >
+                        Test
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
 
@@ -1046,6 +1103,8 @@ export default function EnhancedChatPage() {
                           <div>Experience: {resumeAnalysis.hasExperience ? '✅' : '❌'}</div>
                           <div>Education: {resumeAnalysis.hasEducation ? '✅' : '❌'}</div>
                           <div>Skills: {resumeAnalysis.hasSkills ? '✅' : '❌'}</div>
+                          <div>Achievements: {resumeAnalysis.hasAchievements ? '✅' : '❌'}</div>
+                          <div>Action Verbs: {resumeAnalysis.hasActionVerbs ? '✅' : '❌'}</div>
                         </div>
                         {resumeAnalysis.suggestions.length > 0 && (
                           <div className="mt-4">

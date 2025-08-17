@@ -12,8 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, AlertCircle, Github, Twitter, Sparkles } from "lucide-react"
+import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, Github, Twitter, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { dbClient } from "@/lib/supabase/database-client"
@@ -75,9 +74,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignUpLoading, setIsSignUpLoading] = useState(false)
   const [demoMode, setDemoMode] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
-  const [databaseStatus, setDatabaseStatus] = useState<{ status: string; tables: string[]; errors: string[] } | null>(null)
   
   // Form state
   const [loginForm, setLoginForm] = useState({
@@ -109,7 +105,6 @@ export default function LoginPage() {
       if (isSupabaseConfigured) {
         try {
           const status = await dbClient.checkDatabaseStatus()
-          setDatabaseStatus(status)
           console.log('Database status:', status)
         } catch (error) {
           console.error('Error checking database status:', error)
@@ -158,17 +153,6 @@ export default function LoginPage() {
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(signUpForm.password))
   }, [signUpForm.password])
-
-  // Auto-hide success message
-  useEffect(() => {
-    if (showSuccess) {
-      const timer = setTimeout(() => {
-        setShowSuccess(false)
-        setSuccessMessage("")
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [showSuccess])
 
   // Validate form fields
   const validateField = (field: string, value: string) => {
@@ -241,8 +225,10 @@ export default function LoginPage() {
           variant: "destructive",
         })
       } else {
-        setSuccessMessage("Login successful! Redirecting to dashboard...")
-        setShowSuccess(true)
+        toast({
+          title: "Login Successful",
+          description: "Redirecting to dashboard...",
+        })
         
         // Clear form
         setLoginForm({
@@ -318,8 +304,10 @@ export default function LoginPage() {
         })
       } else {
         console.log('SignUp successful!')
-        setSuccessMessage("Account created successfully! Please check your email to verify your account.")
-        setShowSuccess(true)
+        toast({
+          title: "Account Created",
+          description: "Account created successfully! Please check your email to verify your account.",
+        })
         
         // Clear form after successful signup
         setSignUpForm({
@@ -427,78 +415,6 @@ export default function LoginPage() {
           variants={cardVariants}
           className="w-full"
         >
-          {/* Supabase Configuration Status */}
-          {!isSupabaseConfigured && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className="mb-4"
-            >
-              <Alert className="border-orange-200 bg-orange-50 text-orange-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Configuration Required:</strong> Supabase environment variables are not set.
-                  <span className="block mt-1 text-sm">
-                    Please create a <code className="bg-orange-100 px-1 rounded">.env.local</code> file with your Supabase credentials.
-                  </span>
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-
-          {/* Database Status */}
-          {databaseStatus && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className="mb-4"
-            >
-              <Alert className={`
-                ${databaseStatus.status === 'healthy' ? 'border-green-200 bg-green-50 text-green-800' : ''}
-                ${databaseStatus.status === 'partial' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' : ''}
-                ${databaseStatus.status === 'unconfigured' ? 'border-red-200 bg-red-50 text-red-800' : ''}
-                ${databaseStatus.status === 'error' ? 'border-red-200 bg-red-50 text-red-800' : ''}
-              `}>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Database Status:</strong> {databaseStatus.status}
-                  {databaseStatus.tables.length > 0 && (
-                    <span className="block mt-1">
-                      ✅ Tables: {databaseStatus.tables.join(', ')}
-                    </span>
-                  )}
-                  {databaseStatus.errors.length > 0 && (
-                    <span className="block mt-1">
-                      ❌ Issues: {databaseStatus.errors.join(', ')}
-                    </span>
-                  )}
-                  {databaseStatus.status === 'unconfigured' && (
-                    <span className="block mt-2 text-sm">
-                      Please run the database setup script in your Supabase SQL Editor.
-                    </span>
-                  )}
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-
-          {/* Success Message */}
-          <AnimatePresence>
-            {showSuccess && (
-              <motion.div
-                initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                className="mb-4"
-              >
-                <Alert className="border-green-200 bg-green-50 text-green-800">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertDescription>{successMessage}</AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>

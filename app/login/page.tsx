@@ -15,7 +15,6 @@ import { Progress } from "@/components/ui/progress"
 import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, Github, Twitter, Sparkles } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { dbClient } from "@/lib/supabase/database-client"
 
 // Password strength checker
 const getPasswordStrength = (password: string) => {
@@ -98,49 +97,6 @@ export default function LoginPage() {
   // Check if Supabase is configured
   const isSupabaseConfigured = typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" && 
                                process.env.NEXT_PUBLIC_SUPABASE_URL.length > 0
-
-  // Check database status
-  useEffect(() => {
-    const checkDatabase = async () => {
-      if (isSupabaseConfigured) {
-        try {
-          const status = await dbClient.checkDatabaseStatus()
-          console.log('Database status:', status)
-        } catch (error) {
-          console.error('Error checking database status:', error)
-        }
-      }
-    }
-    
-    checkDatabase()
-  }, [isSupabaseConfigured])
-
-  // Test Supabase connection
-  useEffect(() => {
-    const testSupabaseConnection = async () => {
-      if (isSupabaseConfigured) {
-        try {
-          console.log('Testing Supabase connection...')
-          console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-          console.log('SUPABASE_ANON_KEY length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length)
-          
-          // Test basic connection
-          const { createClient } = await import('@/lib/supabase/client')
-          const supabase = createClient()
-          
-          if (supabase.auth) {
-            console.log('Supabase auth is available')
-          } else {
-            console.error('Supabase auth is not available')
-          }
-        } catch (error) {
-          console.error('Supabase connection test failed:', error)
-        }
-      }
-    }
-    
-    testSupabaseConnection()
-  }, [isSupabaseConfigured])
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -424,27 +380,37 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/30 rounded-lg border border-muted-foreground/20">
+                  <TabsTrigger 
+                    value="login" 
+                    className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all duration-200 font-medium"
+                  >
+                    Sign In
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="signup" 
+                    className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all duration-200 font-medium"
+                  >
+                    Sign Up
+                  </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="login" className="space-y-4">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <TabsContent value="login" className="space-y-6">
+                  <form onSubmit={handleLogin} className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="login-email" className="text-sm font-medium text-foreground/80">Email Address</Label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="login-email"
                           type="email"
-                          placeholder="Enter your email"
+                          placeholder="Enter your email address"
                           value={loginForm.email}
                           onChange={(e) => {
                             setLoginForm(prev => ({ ...prev, email: e.target.value }))
                             validateField('email', e.target.value)
                           }}
-                          className="pl-10 input-enhanced"
+                          className="pl-12 pr-4 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                           required
                         />
                       </div>
@@ -452,17 +418,18 @@ export default function LoginPage() {
                         <motion.p
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="text-sm text-destructive"
+                          className="text-sm text-destructive flex items-center gap-2"
                         >
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                           {errors.email}
                         </motion.p>
                       )}
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-3">
+                      <Label htmlFor="login-password" className="text-sm font-medium text-foreground/80">Password</Label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="login-password"
                           type={showPassword ? "text" : "password"}
@@ -472,40 +439,42 @@ export default function LoginPage() {
                             setLoginForm(prev => ({ ...prev, password: e.target.value }))
                             validateField('password', e.target.value)
                           }}
-                          className="pl-10 pr-10 input-enhanced"
+                          className="pl-12 pr-12 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                           required
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                       {errors.password && (
                         <motion.p
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="text-sm text-destructive"
+                          className="text-sm text-destructive flex items-center gap-2"
                         >
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                           {errors.password}
                         </motion.p>
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center space-x-3">
                         <Checkbox
                           id="remember-me"
                           checked={loginForm.rememberMe}
                           onCheckedChange={(checked) => 
                             setLoginForm(prev => ({ ...prev, rememberMe: checked as boolean }))
                           }
+                          className="h-4 w-4 text-primary border-2 border-muted-foreground/30 focus:ring-2 focus:ring-primary/20 rounded"
                         />
-                        <Label htmlFor="remember-me" className="text-sm">Remember me</Label>
+                        <Label htmlFor="remember-me" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Remember me</Label>
                       </div>
-                      <Link href="#" className="text-sm text-primary hover:underline">
+                      <Link href="#" className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors font-medium">
                         Forgot password?
                       </Link>
                     </div>
@@ -513,21 +482,22 @@ export default function LoginPage() {
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      className="pt-4"
                     >
                       <Button 
                         type="submit" 
-                        className="w-full btn-enhanced" 
+                        className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl transition-all duration-200" 
                         disabled={isLoading || !isSupabaseConfigured}
                       >
                         {isLoading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
                             Signing in...
                           </>
                         ) : (
                           <>
                             Sign In
-                            <ArrowRight className="ml-2 h-4 w-4" />
+                            <ArrowRight className="ml-3 h-5 w-5" />
                           </>
                         )}
                       </Button>
@@ -535,23 +505,23 @@ export default function LoginPage() {
                   </form>
                 </TabsContent>
                 
-                <TabsContent value="signup" className="space-y-4">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-firstname">First Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <TabsContent value="signup" className="space-y-6">
+                  <form onSubmit={handleSignUp} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-firstname" className="text-sm font-medium text-foreground/80">First Name</Label>
+                        <div className="relative group">
+                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                           <Input
                             id="signup-firstname"
                             type="text"
-                            placeholder="First name"
+                            placeholder="Enter your first name"
                             value={signUpForm.firstName}
                             onChange={(e) => {
                               setSignUpForm(prev => ({ ...prev, firstName: e.target.value }))
                               validateField('firstName', e.target.value)
                             }}
-                            className="pl-10 input-enhanced"
+                            className="pl-12 pr-4 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                             required
                           />
                         </div>
@@ -559,27 +529,28 @@ export default function LoginPage() {
                           <motion.p
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="text-sm text-destructive"
+                            className="text-sm text-destructive flex items-center gap-2"
                           >
+                            <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                             {errors.firstName}
                           </motion.p>
                         )}
                       </div>
                       
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-lastname">Last Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-lastname" className="text-sm font-medium text-foreground/80">Last Name</Label>
+                        <div className="relative group">
+                          <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                           <Input
                             id="signup-lastname"
                             type="text"
-                            placeholder="Last name"
+                            placeholder="Enter your last name"
                             value={signUpForm.lastName}
                             onChange={(e) => {
                               setSignUpForm(prev => ({ ...prev, lastName: e.target.value }))
                               validateField('lastName', e.target.value)
                             }}
-                            className="pl-10 input-enhanced"
+                            className="pl-12 pr-4 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                             required
                           />
                         </div>
@@ -587,28 +558,29 @@ export default function LoginPage() {
                           <motion.p
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="text-sm text-destructive"
+                            className="text-sm text-destructive flex items-center gap-2"
                           >
+                            <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                             {errors.lastName}
                           </motion.p>
                         )}
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-email" className="text-sm font-medium text-foreground/80">Email Address</Label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-email"
                           type="email"
-                          placeholder="Enter your email"
+                          placeholder="Enter your email address"
                           value={signUpForm.email}
                           onChange={(e) => {
                             setSignUpForm(prev => ({ ...prev, email: e.target.value }))
                             validateField('email', e.target.value)
                           }}
-                          className="pl-10 input-enhanced"
+                          className="pl-12 pr-4 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                           required
                         />
                       </div>
@@ -616,35 +588,36 @@ export default function LoginPage() {
                         <motion.p
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="text-sm text-destructive"
+                          className="text-sm text-destructive flex items-center gap-2"
                         >
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                           {errors.email}
                         </motion.p>
                       )}
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-password" className="text-sm font-medium text-foreground/80">Password</Label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Create a password"
+                          placeholder="Create a strong password"
                           value={signUpForm.password}
                           onChange={(e) => {
                             setSignUpForm(prev => ({ ...prev, password: e.target.value }))
                             validateField('password', e.target.value)
                           }}
-                          className="pl-10 pr-10 input-enhanced"
+                          className="pl-12 pr-12 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                           required
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                       
@@ -653,17 +626,26 @@ export default function LoginPage() {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
-                          className="space-y-2"
+                          className="space-y-3 p-4 bg-muted/20 rounded-lg border border-muted-foreground/10"
                         >
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Password strength:</span>
-                            <span className={`font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                            <span className="text-muted-foreground font-medium">Password strength:</span>
+                            <span className={`font-semibold px-3 py-1 rounded-full text-xs ${
+                              passwordStrength.level === 'Weak' ? 'bg-red-100 text-red-700' :
+                              passwordStrength.level === 'Fair' ? 'bg-yellow-100 text-yellow-700' :
+                              passwordStrength.level === 'Good' ? 'bg-blue-100 text-blue-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
                               {passwordStrength.level}
                             </span>
                           </div>
-                          <Progress value={passwordStrength.score * 20} className="h-2" />
-                          <div className="text-xs text-muted-foreground">
-                            {passwordStrength.feedback.join(', ')}
+                          <Progress value={passwordStrength.score * 20} className="h-2 bg-muted-foreground/20" />
+                          <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
+                            {passwordStrength.feedback.map((item, index) => (
+                              <span key={index} className="px-2 py-1 bg-background/50 rounded-md border border-muted-foreground/20">
+                                {item}
+                              </span>
+                            ))}
                           </div>
                         </motion.div>
                       )}
@@ -672,17 +654,18 @@ export default function LoginPage() {
                         <motion.p
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="text-sm text-destructive"
+                          className="text-sm text-destructive flex items-center gap-2"
                         >
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                           {errors.password}
                         </motion.p>
                       )}
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground/80">Confirm Password</Label>
+                      <div className="relative group">
+                        <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                         <Input
                           id="signup-confirm-password"
                           type={showConfirmPassword ? "text" : "password"}
@@ -692,43 +675,45 @@ export default function LoginPage() {
                             setSignUpForm(prev => ({ ...prev, confirmPassword: e.target.value }))
                             validateField('confirmPassword', e.target.value)
                           }}
-                          className="pl-10 pr-10 input-enhanced"
+                          className="pl-12 pr-12 h-12 text-base border-2 border-muted-foreground/20 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-background/50 hover:bg-background/80 rounded-xl"
                           required
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-200 p-1 rounded-md hover:bg-muted/50"
                         >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                       {errors.confirmPassword && (
                         <motion.p
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="text-sm text-destructive"
+                          className="text-sm text-destructive flex items-center gap-2"
                         >
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                           {errors.confirmPassword}
                         </motion.p>
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-start space-x-3 pt-2">
                       <Checkbox
                         id="agree-terms"
                         checked={signUpForm.agreeToTerms}
                         onCheckedChange={(checked) => 
                           setSignUpForm(prev => ({ ...prev, agreeToTerms: checked as boolean }))
                         }
+                        className="h-4 w-4 text-primary border-2 border-muted-foreground/30 focus:ring-2 focus:ring-primary/20 rounded mt-1"
                       />
-                      <Label htmlFor="agree-terms" className="text-sm">
+                      <Label htmlFor="agree-terms" className="text-sm text-muted-foreground leading-relaxed">
                         I agree to the{" "}
-                        <Link href="#" className="text-primary hover:underline">
+                        <Link href="#" className="text-primary hover:text-primary/80 hover:underline transition-colors font-medium">
                           Terms of Service
                         </Link>{" "}
                         and{" "}
-                        <Link href="#" className="text-primary hover:underline">
+                        <Link href="#" className="text-primary hover:text-primary/80 hover:underline transition-colors font-medium">
                           Privacy Policy
                         </Link>
                       </Label>
@@ -738,8 +723,9 @@ export default function LoginPage() {
                       <motion.p
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-sm text-destructive"
+                        className="text-sm text-destructive flex items-center gap-2"
                       >
+                        <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
                         {errors.terms}
                       </motion.p>
                     )}
@@ -747,21 +733,22 @@ export default function LoginPage() {
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      className="pt-4"
                     >
                       <Button 
                         type="submit" 
-                        className="w-full btn-enhanced" 
+                        className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl transition-all duration-200" 
                         disabled={isSignUpLoading || !isSupabaseConfigured}
                       >
                         {isSignUpLoading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
                             Creating account...
                           </>
                         ) : (
                           <>
                             Create Account
-                            <ArrowRight className="ml-2 h-4 w-4" />
+                            <ArrowRight className="ml-3 h-5 w-5" />
                           </>
                         )}
                       </Button>

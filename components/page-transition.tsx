@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 
 interface PageTransitionProps {
@@ -10,18 +10,20 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingText, setLoadingText] = useState("Loading...")
-  const [isNavigating, setIsNavigating] = useState(false)
-  const navigationStartTime = useRef<number>(0)
+  const previousPathname = useRef(pathname)
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    const handleStart = () => {
-      console.log('PageTransition: Navigation started')
-      setIsNavigating(true)
-      setIsLoading(true)
-      navigationStartTime.current = Date.now()
+    // Only show loading if we're actually navigating to a different page
+    if (previousPathname.current !== pathname && previousPathname.current !== '') {
+      console.log('PageTransition: Navigation detected, showing loading...')
+      
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
       
       // Set loading message based on current pathname
       const pageType = pathname.split('/')[1] || 'home'
@@ -40,44 +42,25 @@ export default function PageTransition({ children }: PageTransitionProps) {
       }
       
       setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
-    }
-
-    const handleComplete = () => {
-      console.log('PageTransition: Navigation completed')
-      const elapsed = Date.now() - navigationStartTime.current
-      const minLoadingTime = 500 // Minimum loading time in ms
+      setIsLoading(true)
       
-      if (elapsed < minLoadingTime) {
-        // If navigation was too fast, show loading for minimum time
-        setTimeout(() => {
-          setIsLoading(false)
-          setIsNavigating(false)
-        }, minLoadingTime - elapsed)
-      } else {
+      // Show loading for a reasonable time
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.log('PageTransition: Hiding loading...')
         setIsLoading(false)
-        setIsNavigating(false)
-      }
+      }, 800)
     }
-
-    // Simulate navigation events since Next.js 13+ doesn't expose them directly
-    // We'll use pathname changes as a proxy for navigation
-    const handlePathnameChange = () => {
-      if (isNavigating) {
-        handleComplete()
-      } else {
-        handleStart()
-      }
-    }
-
-    // Trigger navigation start when pathname changes
-    if (pathname) {
-      handlePathnameChange()
-    }
-
+    
+    // Update the previous pathname
+    previousPathname.current = pathname
+    
+    // Cleanup function
     return () => {
-      // Cleanup
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
     }
-  }, [pathname, isNavigating])
+  }, [pathname])
 
   return (
     <>

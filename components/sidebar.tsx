@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   LayoutDashboard,
@@ -10,10 +10,13 @@ import {
   MessageCircle,
   TrendingUp,
   Settings,
+  User,
+  LogOut,
   Download,
   Target,
   Sparkles,
 } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, description: "Overview & analytics" },
@@ -24,6 +27,7 @@ const navigation = [
 ]
 
 const bottomNavigation = [
+  { name: "Profile Settings", href: "/profile", icon: User, description: "Manage account" },
   { name: "Export Data", href: "/export", icon: Download, description: "Download reports" },
   { name: "Settings", href: "/settings", icon: Settings, description: "Preferences" },
 ]
@@ -47,6 +51,17 @@ const itemVariants = {
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { signOut, profile } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
 
   return (
     <motion.div 
@@ -145,6 +160,39 @@ export default function Sidebar() {
             </motion.div>
           )
         })}
+
+        {/* User Profile */}
+        <motion.div 
+          className="mt-4 pt-4 border-t border-sidebar-border"
+          variants={itemVariants}
+        >
+          <div className="flex items-center px-4 py-3 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors cursor-pointer">
+            <motion.div 
+              className="h-10 w-10 rounded-full bg-primary flex items-center justify-center minimal-shadow"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <User className="h-5 w-5 text-primary-foreground" />
+            </motion.div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-sidebar-foreground">
+                {profile?.full_name || profile?.first_name || 'User'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {profile?.role === 'premium' ? 'Premium User' : 'Free User'}
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg hover:bg-sidebar-accent/50 transition-colors"
+              onClick={handleLogout}
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4 text-muted-foreground" />
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   )

@@ -58,10 +58,22 @@ export default function LandingNavbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center"
+            >
               <Mic className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">AI Interview Assistant</span>
+            </motion.div>
+            <motion.span 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="text-xl font-bold text-foreground"
+            >
+              AI Interview Assistant
+            </motion.span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -108,27 +120,44 @@ export default function LandingNavbar() {
 
           {/* Auth Buttons */}
           <div className="hidden lg:flex items-center space-x-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <LogIn className="h-4 w-4" />
-                Log In
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="sm" className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Sign Up
-              </Button>
-            </Link>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="gap-2 transition-all duration-200 hover:bg-muted/50">
+                  <LogIn className="h-4 w-4" />
+                  Log In
+                </Button>
+              </Link>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/login">
+                <Button size="sm" className="gap-2 transition-all duration-200 hover:shadow-md">
+                  <UserPlus className="h-4 w-4" />
+                  Sign Up
+                </Button>
+              </Link>
+            </motion.div>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 rounded-md text-gray-700 hover:text-primary hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-md text-gray-700 hover:text-primary hover:bg-gray-100 transition-all duration-200"
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            <motion.div
+              animate={{ rotate: isMenuOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </motion.div>
+          </motion.button>
         </div>
 
         {/* Mobile Menu */}

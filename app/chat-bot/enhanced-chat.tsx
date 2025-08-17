@@ -57,10 +57,12 @@ export default function EnhancedChatPage() {
   // Resume Analysis Integration
   const [resumeText, setResumeText] = useState("")
   const [resumeAnalysis, setResumeAnalysis] = useState<any>(null)
+  const [isResumeAnalyzing, setIsResumeAnalyzing] = useState(false)
   
   // Speech Analysis Integration
   const [speechTranscript, setSpeechTranscript] = useState("")
   const [speechAnalysis, setSpeechAnalysis] = useState<any>(null)
+  const [isSpeechAnalyzing, setIsSpeechAnalyzing] = useState(false)
   
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -356,10 +358,13 @@ export default function EnhancedChatPage() {
       return
     }
 
-    setIsTyping(true)
+    setIsResumeAnalyzing(true)
     addMessage("user", `Resume Analysis Request:\n\n${resumeText}`)
 
     try {
+      // Simulate processing time with progress updates
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       const analysis = {
         wordCount: resumeText.split(/\s+/).length,
         hasContactInfo: /(email|phone|address|linkedin)/i.test(resumeText),
@@ -380,12 +385,15 @@ export default function EnhancedChatPage() {
 
       const response = `**Resume Analysis Complete!** 📊\n\n**Word Count:** ${analysis.wordCount}\n**Contact Info:** ${analysis.hasContactInfo ? '✅' : '❌'}\n**Summary:** ${analysis.hasSummary ? '✅' : '❌'}\n**Experience:** ${analysis.hasExperience ? '✅' : '❌'}\n**Education:** ${analysis.hasEducation ? '✅' : '❌'}\n**Skills:** ${analysis.hasSkills ? '✅' : '❌'}\n\n**Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
       
+      // Add success animation delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       addMessage("ai", response)
-      setIsTyping(false)
     } catch (error) {
       console.error("Error analyzing resume:", error)
       addMessage("ai", "Sorry, there was an error analyzing your resume. Please try again.")
-      setIsTyping(false)
+    } finally {
+      setIsResumeAnalyzing(false)
     }
   }
 
@@ -395,10 +403,13 @@ export default function EnhancedChatPage() {
       return
     }
 
-    setIsTyping(true)
+    setIsSpeechAnalyzing(true)
     addMessage("user", `Speech Analysis Request:\n\n${speechTranscript}`)
 
     try {
+      // Simulate processing time with progress updates
+      await new Promise(resolve => setTimeout(resolve, 2500))
+
       const analysis = {
         wordCount: speechTranscript.split(/\s+/).length,
         estimatedDuration: Math.round(speechTranscript.split(/\s+/).length / 150),
@@ -415,12 +426,15 @@ export default function EnhancedChatPage() {
 
       const response = `**Speech Analysis Complete!** 🎤\n\n**Word Count:** ${analysis.wordCount}\n**Estimated Duration:** ${analysis.estimatedDuration} minutes\n**Filler Words:** ${analysis.hasFillerWords ? '⚠️' : '✅'}\n**Confidence Score:** ${analysis.confidence}%\n\n**Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
       
+      // Add success animation delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       addMessage("ai", response)
-      setIsTyping(false)
     } catch (error) {
       console.error("Error analyzing speech:", error)
       addMessage("ai", "Sorry, there was an error analyzing your speech. Please try again.")
-      setIsTyping(false)
+    } finally {
+      setIsSpeechAnalyzing(false)
     }
   }
 
@@ -432,12 +446,16 @@ export default function EnhancedChatPage() {
     setIsTyping(true)
 
     try {
+      // Simulate AI thinking time based on message length
+      const thinkingTime = Math.min(Math.max(content.length * 50, 1000), 3000)
+      await new Promise(resolve => setTimeout(resolve, thinkingTime))
+      
       const response = generateAIResponse(content.trim())
       addMessage("ai", response)
-      setIsTyping(false)
     } catch (error) {
       console.error("Error sending message:", error)
       addMessage("ai", "Sorry, there was an error processing your message. Please try again.")
+    } finally {
       setIsTyping(false)
     }
   }
@@ -470,35 +488,56 @@ export default function EnhancedChatPage() {
         {/* Sidebar - Chat History */}
         <div className="w-80 bg-muted/30 border-r border-border flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-border">
-            <Button 
-              onClick={createNewChatSession}
-              className="w-full justify-start gap-2"
-              variant="outline"
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 border-b border-border"
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Plus className="h-4 w-4" />
-              New Chat
-            </Button>
-          </div>
+              <Button 
+                onClick={createNewChatSession}
+                className="w-full justify-start gap-2 transition-all duration-200 hover:shadow-md"
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" />
+                New Chat
+              </Button>
+            </motion.div>
+          </motion.div>
 
           {/* Chat Sessions List */}
           <ScrollArea className="flex-1 p-2">
             <div className="space-y-2">
-              {chatSessions.map((session) => (
+              {chatSessions.map((session, index) => (
                 <motion.div
                   key={session.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
+                  transition={{ 
+                    duration: 0.3, 
+                    delay: index * 0.1,
+                    ease: "easeOut"
+                  }}
+                  whileHover={{ scale: 1.02, x: 5 }}
                   className="relative group"
                 >
                   <button
                     onClick={() => loadChatSession(session.id)}
-                    className={`w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-colors ${
-                      currentSessionId === session.id ? 'bg-muted' : ''
+                    className={`w-full text-left p-3 rounded-lg hover:bg-muted/50 transition-all duration-200 ${
+                      currentSessionId === session.id ? 'bg-muted shadow-sm' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <motion.div
+                        whileHover={{ rotate: 5 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      </motion.div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{session.title}</p>
                         <p className="text-xs text-muted-foreground">
@@ -509,12 +548,15 @@ export default function EnhancedChatPage() {
                   </button>
                   
                   {/* Delete Button */}
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ opacity: 1, scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => deleteChatSession(session.id)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded"
                   >
                     <Trash2 className="h-3 w-3 text-destructive" />
-                  </button>
+                  </motion.button>
                 </motion.div>
               ))}
             </div>
@@ -525,9 +567,31 @@ export default function EnhancedChatPage() {
         <div className="flex-1 flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <TabsList className="w-full justify-center border-b border-border rounded-none">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="resume">Resume Analysis</TabsTrigger>
-              <TabsTrigger value="speech">Speech Analysis</TabsTrigger>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex w-full"
+              >
+                <TabsTrigger 
+                  value="chat" 
+                  className="flex-1 transition-all duration-200 hover:bg-muted/50"
+                >
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="resume" 
+                  className="flex-1 transition-all duration-200 hover:bg-muted/50"
+                >
+                  Resume Analysis
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="speech" 
+                  className="flex-1 transition-all duration-200 hover:bg-muted/50"
+                >
+                  Speech Analysis
+                </TabsTrigger>
+              </motion.div>
             </TabsList>
 
             {/* Chat Tab */}
@@ -536,23 +600,35 @@ export default function EnhancedChatPage() {
                 {/* Messages Area */}
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   <div className="max-w-4xl mx-auto space-y-6">
-                    {messages.map((message) => (
+                    {messages.map((message, index) => (
                       <motion.div
                         key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ 
+                          duration: 0.4, 
+                          delay: index * 0.1,
+                          ease: "easeOut"
+                        }}
                         className={`flex gap-4 ${
                           message.type === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                       >
                         {message.type !== 'user' && (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <motion.div 
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 + 0.2 }}
+                            className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"
+                          >
                             <Bot className="h-5 w-5 text-primary" />
-                          </div>
+                          </motion.div>
                         )}
                         
-                        <div
+                        <motion.div
+                          initial={{ opacity: 0, x: message.type === 'user' ? 20 : -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 + 0.1 }}
                           className={`max-w-[80%] p-4 rounded-2xl ${
                             message.type === 'user'
                               ? 'bg-primary text-primary-foreground ml-auto'
@@ -564,33 +640,52 @@ export default function EnhancedChatPage() {
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {message.content}
                           </ReactMarkdown>
-                        </div>
+                        </motion.div>
 
                         {message.type === 'user' && (
-                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                          <motion.div 
+                            initial={{ scale: 0, rotate: 180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 + 0.2 }}
+                            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+                          >
                             <User className="h-5 w-5 text-primary-foreground" />
-                          </div>
+                          </motion.div>
                         )}
                       </motion.div>
                     ))}
                     
                     {isTyping && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
                         className="flex gap-4"
                       >
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <Bot className="h-5 w-5 text-primary" />
                         </div>
                         <div className="bg-muted/50 p-4 rounded-2xl">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <motion.div 
+                                className="w-2 h-2 bg-primary rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                              />
+                              <motion.div 
+                                className="w-2 h-2 bg-primary rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                              />
+                              <motion.div 
+                                className="w-2 h-2 bg-primary rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                              />
                             </div>
-                            <span className="text-sm text-muted-foreground">AI is typing...</span>
+                            <span className="text-sm text-muted-foreground">AI is thinking...</span>
                           </div>
                         </div>
                       </motion.div>
@@ -599,7 +694,12 @@ export default function EnhancedChatPage() {
                 </ScrollArea>
 
                 {/* Input Area */}
-                <div className="border-t border-border p-4">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="border-t border-border p-4"
+                >
                   <div className="max-w-4xl mx-auto">
                     <div className="flex gap-2">
                       <div className="flex-1 relative">
@@ -607,7 +707,7 @@ export default function EnhancedChatPage() {
                           value={inputValue}
                           onChange={(e) => setInputValue(e.target.value)}
                           placeholder="Ask me anything about your career, interviews, or job search..."
-                          className="min-h-[60px] resize-none pr-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          className="min-h-[60px] resize-none pr-20 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-200 hover:bg-muted/30 focus:bg-muted/50"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault()
@@ -616,33 +716,57 @@ export default function EnhancedChatPage() {
                           }}
                         />
                         <div className="absolute right-2 bottom-2 flex gap-1">
-                          <Button
-                            size="sm"
-                            variant={isRecording ? "destructive" : "ghost"}
-                            onClick={isRecording ? stopRecording : startRecording}
-                            className="h-8 w-8 p-0"
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                           >
-                            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
+                            <Button
+                              size="sm"
+                              variant={isRecording ? "destructive" : "ghost"}
+                              onClick={isRecording ? stopRecording : startRecording}
+                              className="h-8 w-8 p-0 transition-all duration-200"
+                            >
+                              {isRecording ? (
+                                <motion.div
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ duration: 1, repeat: Infinity }}
+                                >
+                                  <MicOff className="h-4 w-4" />
+                                </motion.div>
+                              ) : (
+                                <Mic className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </motion.div>
                         </div>
                       </div>
-                      <Button
-                        onClick={() => sendMessage(inputValue)}
-                        disabled={!inputValue.trim() || isTyping}
-                        className="px-6"
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        <Send className="h-4 w-4" />
-                      </Button>
+                        <Button
+                          onClick={() => sendMessage(inputValue)}
+                          disabled={!inputValue.trim() || isTyping}
+                          className="px-6 transition-all duration-200"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
             </TabsContent>
 
             {/* Resume Analysis Tab */}
             <TabsContent value="resume" className="flex-1 p-6">
-              <div className="max-w-4xl mx-auto">
-                <Card>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="max-w-4xl mx-auto"
+              >
+                <Card className="hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
@@ -653,30 +777,70 @@ export default function EnhancedChatPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                    >
                       <label className="block text-sm font-medium mb-2">Resume Text</label>
                       <Textarea
                         value={resumeText}
                         onChange={(e) => setResumeText(e.target.value)}
                         placeholder="Paste your resume text here..."
-                        className="min-h-[200px]"
+                        className="min-h-[200px] transition-all duration-200 hover:bg-muted/30 focus:bg-muted/50"
                       />
-                    </div>
+                    </motion.div>
 
-                    <Button 
-                      onClick={analyzeResume}
-                      disabled={!resumeText.trim()}
-                      className="w-full"
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
                     >
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Analyze Resume
-                    </Button>
+                      <Button 
+                        onClick={analyzeResume}
+                        disabled={!resumeText.trim() || isResumeAnalyzing}
+                        className="w-full transition-all duration-200 hover:scale-105"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        {isResumeAnalyzing ? 'Analyzing...' : 'Analyze Resume'}
+                      </Button>
+                    </motion.div>
 
-                    {resumeAnalysis && (
+                    {isResumeAnalyzing && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="p-4 bg-muted/30 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="flex space-x-1">
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground">Analyzing resume...</span>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {resumeAnalysis && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="p-4 bg-muted/30 rounded-lg border border-primary/20"
                       >
                         <h4 className="font-semibold mb-2">Analysis Results</h4>
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -692,7 +856,15 @@ export default function EnhancedChatPage() {
                             <h5 className="font-medium mb-2">Suggestions:</h5>
                             <ul className="list-disc list-inside space-y-1">
                               {resumeAnalysis.suggestions.map((suggestion: string, index: number) => (
-                                <li key={index} className="text-sm">{suggestion}</li>
+                                <motion.li 
+                                  key={index} 
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                                  className="text-sm"
+                                >
+                                  {suggestion}
+                                </motion.li>
                               ))}
                             </ul>
                           </div>
@@ -701,13 +873,18 @@ export default function EnhancedChatPage() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
             </TabsContent>
 
             {/* Speech Analysis Tab */}
             <TabsContent value="speech" className="flex-1 p-6">
-              <div className="max-w-4xl mx-auto">
-                <Card>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="max-w-4xl mx-auto"
+              >
+                <Card className="hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileAudio className="h-5 w-5 text-primary" />
@@ -718,30 +895,70 @@ export default function EnhancedChatPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                    >
                       <label className="block text-sm font-medium mb-2">Speech Transcript</label>
                       <Textarea
                         value={speechTranscript}
                         onChange={(e) => setSpeechTranscript(e.target.value)}
                         placeholder="Paste your speech transcript or use voice input in the chat..."
-                        className="min-h-[200px]"
+                        className="min-h-[200px] transition-all duration-200 hover:bg-muted/30 focus:bg-muted/50"
                       />
-                    </div>
+                    </motion.div>
 
-                    <Button 
-                      onClick={analyzeSpeech}
-                      disabled={!speechTranscript.trim()}
-                      className="w-full"
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
                     >
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Analyze Speech
-                    </Button>
+                      <Button 
+                        onClick={analyzeSpeech}
+                        disabled={!speechTranscript.trim() || isSpeechAnalyzing}
+                        className="w-full transition-all duration-200 hover:scale-105"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        {isSpeechAnalyzing ? 'Analyzing...' : 'Analyze Speech'}
+                      </Button>
+                    </motion.div>
 
-                    {speechAnalysis && (
+                    {isSpeechAnalyzing && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="p-4 bg-muted/30 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="flex space-x-1">
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-primary rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground">Analyzing speech...</span>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {speechAnalysis && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="p-4 bg-muted/30 rounded-lg border border-primary/20"
                       >
                         <h4 className="font-semibold mb-2">Analysis Results</h4>
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -755,7 +972,15 @@ export default function EnhancedChatPage() {
                             <h5 className="font-medium mb-2">Suggestions:</h5>
                             <ul className="list-disc list-inside space-y-1">
                               {speechAnalysis.suggestions.map((suggestion: string, index: number) => (
-                                <li key={index} className="text-sm">{suggestion}</li>
+                                <motion.li 
+                                  key={index} 
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                                  className="text-sm"
+                                >
+                                  {suggestion}
+                                </motion.li>
                               ))}
                             </ul>
                           </div>
@@ -764,7 +989,7 @@ export default function EnhancedChatPage() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
             </TabsContent>
           </Tabs>
         </div>

@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Github, Twitter, Sparkles } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
-import EnvCheck from "@/components/env-check"
+
 
 // Password strength checker
 const getPasswordStrength = (password: string) => {
@@ -421,7 +421,7 @@ export default function LoginPage() {
             variants={itemVariants}
             className="mb-6"
           >
-            <EnvCheck showDetails={true} />
+    
           </motion.div>
           
           {/* Debug Info - Remove this in production */}

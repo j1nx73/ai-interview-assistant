@@ -54,6 +54,9 @@ export default function EnhancedChatPage() {
   const [isRecording, setIsRecording] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
   
+  // AI Service Status
+  const [aiServiceStatus, setAiServiceStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
+  
   // Resume Analysis Integration
   const [resumeText, setResumeText] = useState("")
   const [resumeAnalysis, setResumeAnalysis] = useState<any>(null)
@@ -73,6 +76,7 @@ export default function EnhancedChatPage() {
     initializeVoiceRecognition()
     loadChatSessions()
     createNewChatSession()
+    checkAiServiceStatus()
   }, [])
 
   useEffect(() => {
@@ -209,7 +213,7 @@ export default function EnhancedChatPage() {
         setChatSessions([])
         
         // Add welcome message
-        addMessage("system", "Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. How can I assist you today? Note: You're in demo mode - chat history won't be saved until you sign in.")
+        addMessage("system", `Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. How can I assist you today? Note: You're in demo mode - chat history won't be saved until you sign in.`)
         return
       }
 
@@ -240,8 +244,12 @@ export default function EnhancedChatPage() {
       setMessages([])
       loadChatSessions()
       
-      // Add welcome message
-      addMessage("system", "Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. How can I assist you today?")
+      // Add welcome message based on AI service status
+      const welcomeMessage = aiServiceStatus === 'available' 
+        ? "Welcome! I'm your AI Career Coach powered by advanced AI technology. I can help with resume analysis, speech improvement, and interview preparation. Ask me anything about your career journey!"
+        : "Welcome! I'm your AI Career Coach. I can help with resume analysis, speech improvement, and interview preparation. Note: AI features are currently using enhanced local analysis. For full AI-powered responses, please ensure your Gemini API key is configured."
+      
+      addMessage("system", welcomeMessage)
     } catch (error) {
       console.error("Error creating new chat session:", error)
     }
@@ -362,28 +370,70 @@ export default function EnhancedChatPage() {
     addMessage("user", `Resume Analysis Request:\n\n${resumeText}`)
 
     try {
-      // Simulate processing time with progress updates
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Try to get AI-powered resume analysis
+      let aiFeedback = ""
+      try {
+        const response = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'resume-feedback',
+            data: {
+              resumeText: resumeText,
+              jobDescription: "General resume optimization and ATS compatibility"
+            }
+          })
+        })
 
+        if (response.ok) {
+          const result = await response.json()
+          if (result.feedback && !result.error) {
+            aiFeedback = result.feedback
+          }
+        }
+      } catch (aiError) {
+        console.log('AI analysis not available, using enhanced local analysis')
+      }
+
+      // Enhanced local analysis
       const analysis = {
         wordCount: resumeText.split(/\s+/).length,
-        hasContactInfo: /(email|phone|address|linkedin)/i.test(resumeText),
-        hasSummary: /(summary|objective|profile)/i.test(resumeText),
-        hasExperience: /(experience|work|employment)/i.test(resumeText),
-        hasEducation: /(education|degree|university|college)/i.test(resumeText),
-        hasSkills: /(skills|competencies|technologies)/i.test(resumeText),
+        hasContactInfo: /(email|phone|address|linkedin|github)/i.test(resumeText),
+        hasSummary: /(summary|objective|profile|overview)/i.test(resumeText),
+        hasExperience: /(experience|work|employment|job|position)/i.test(resumeText),
+        hasEducation: /(education|degree|university|college|school)/i.test(resumeText),
+        hasSkills: /(skills|competencies|technologies|tools|languages)/i.test(resumeText),
+        hasAchievements: /(achieved|increased|improved|developed|created|managed)/i.test(resumeText),
+        hasActionVerbs: /(developed|implemented|managed|led|created|designed|analyzed)/i.test(resumeText),
         suggestions: [] as string[]
       }
 
-      if (!analysis.hasContactInfo) analysis.suggestions.push("Add contact information")
-      if (!analysis.hasSummary) analysis.suggestions.push("Include a professional summary")
-      if (!analysis.hasExperience) analysis.suggestions.push("Add work experience section")
-      if (!analysis.hasEducation) analysis.suggestions.push("Include education details")
-      if (!analysis.hasSkills) analysis.suggestions.push("List your key skills")
+      // Generate comprehensive suggestions
+      if (!analysis.hasContactInfo) analysis.suggestions.push("Add professional contact information (email, phone, LinkedIn)")
+      if (!analysis.hasSummary) analysis.suggestions.push("Include a compelling professional summary (2-3 sentences)")
+      if (!analysis.hasExperience) analysis.suggestions.push("Add detailed work experience with quantifiable achievements")
+      if (!analysis.hasEducation) analysis.suggestions.push("Include education details and relevant certifications")
+      if (!analysis.hasSkills) analysis.suggestions.push("List key skills and technologies relevant to your target role")
+      if (!analysis.hasAchievements) analysis.suggestions.push("Quantify achievements with specific numbers and results")
+      if (!analysis.hasActionVerbs) analysis.suggestions.push("Use strong action verbs to start bullet points")
+      
+      // ATS optimization tips
+      if (analysis.wordCount < 200) analysis.suggestions.push("Consider adding more detail to meet ATS keyword requirements")
+      if (analysis.wordCount > 800) analysis.suggestions.push("Streamline content to keep resume concise and focused")
+      
+      // Format suggestions
+      if (!/(bullet|•|\-)/.test(resumeText)) analysis.suggestions.push("Use bullet points for better readability and ATS parsing")
 
       setResumeAnalysis(analysis)
 
-      const response = `**Resume Analysis Complete!** 📊\n\n**Word Count:** ${analysis.wordCount}\n**Contact Info:** ${analysis.hasContactInfo ? '✅' : '❌'}\n**Summary:** ${analysis.hasSummary ? '✅' : '❌'}\n**Experience:** ${analysis.hasExperience ? '✅' : '❌'}\n**Education:** ${analysis.hasEducation ? '✅' : '❌'}\n**Skills:** ${analysis.hasSkills ? '✅' : '❌'}\n\n**Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
+      // Combine AI feedback with local analysis
+      let response = `**Resume Analysis Complete!** 📊\n\n**Word Count:** ${analysis.wordCount}\n**Contact Info:** ${analysis.hasContactInfo ? '✅' : '❌'}\n**Summary:** ${analysis.hasSummary ? '✅' : '❌'}\n**Experience:** ${analysis.hasExperience ? '✅' : '❌'}\n**Education:** ${analysis.hasEducation ? '✅' : '❌'}\n**Skills:** ${analysis.hasSkills ? '✅' : '❌'}\n**Achievements:** ${analysis.hasAchievements ? '✅' : '❌'}\n**Action Verbs:** ${analysis.hasActionVerbs ? '✅' : '❌'}\n\n**Key Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
+      
+      if (aiFeedback) {
+        response += `\n\n**AI-Powered Feedback:**\n${aiFeedback}`
+      }
       
       // Add success animation delay
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -407,24 +457,86 @@ export default function EnhancedChatPage() {
     addMessage("user", `Speech Analysis Request:\n\n${speechTranscript}`)
 
     try {
-      // Simulate processing time with progress updates
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      // Enhanced speech analysis with more detailed metrics
+      const words = speechTranscript.split(/\s+/)
+      const wordCount = words.length
+      const estimatedDuration = Math.round(wordCount / 150)
+      
+      // Filler word detection
+      const fillerWords = ['um', 'uh', 'like', 'you know', 'basically', 'actually', 'sort of', 'kind of', 'right', 'so', 'well']
+      const foundFillerWords = fillerWords.filter(word => 
+        speechTranscript.toLowerCase().includes(word)
+      )
+      
+      // Speaking rate analysis
+      const speakingRate = wordCount / (estimatedDuration || 1)
+      const isOptimalRate = speakingRate >= 120 && speakingRate <= 200
+      
+      // Confidence indicators
+      const hasConfidentPhrases = /(i can|i will|i am confident|i believe|i know)/i.test(speechTranscript)
+      const hasHesitantPhrases = /(maybe|i think|i guess|i'm not sure|perhaps)/i.test(speechTranscript)
+      
+      // Structure analysis
+      const hasClearStructure = /(first|second|third|finally|in conclusion|to summarize)/i.test(speechTranscript)
+      const hasExamples = /(for example|such as|like|specifically|instance)/i.test(speechTranscript)
+      
+      // Calculate confidence score
+      let confidenceScore = 70 // Base score
+      if (hasConfidentPhrases) confidenceScore += 10
+      if (!foundFillerWords.length) confidenceScore += 10
+      if (isOptimalRate) confidenceScore += 5
+      if (hasClearStructure) confidenceScore += 5
+      if (hasExamples) confidenceScore += 5
+      if (hasHesitantPhrases) confidenceScore -= 10
+      if (foundFillerWords.length > 2) confidenceScore -= 10
+      
+      confidenceScore = Math.min(100, Math.max(0, confidenceScore))
 
       const analysis = {
-        wordCount: speechTranscript.split(/\s+/).length,
-        estimatedDuration: Math.round(speechTranscript.split(/\s+/).length / 150),
-        hasFillerWords: /(um|uh|like|you know|basically|actually)/i.test(speechTranscript),
-        confidence: Math.min(90, Math.max(60, 100 - (speechTranscript.split(/\s+/).length * 0.1))),
+        wordCount,
+        estimatedDuration,
+        speakingRate: Math.round(speakingRate),
+        fillerWords: foundFillerWords,
+        fillerWordCount: foundFillerWords.length,
+        confidence: confidenceScore,
+        hasConfidentPhrases,
+        hasHesitantPhrases,
+        hasClearStructure,
+        hasExamples,
+        isOptimalRate,
         suggestions: [] as string[]
       }
 
-      if (analysis.hasFillerWords) analysis.suggestions.push("Reduce filler words (um, uh, like)")
-      if (analysis.wordCount < 50) analysis.suggestions.push("Provide more detailed responses")
-      if (analysis.wordCount > 200) analysis.suggestions.push("Consider being more concise")
+      // Generate personalized suggestions
+      if (foundFillerWords.length > 0) {
+        analysis.suggestions.push(`Reduce filler words: ${foundFillerWords.slice(0, 3).join(', ')}`)
+      }
+      if (!isOptimalRate) {
+        if (speakingRate < 120) {
+          analysis.suggestions.push("Consider speaking a bit faster for better engagement")
+        } else {
+          analysis.suggestions.push("Slow down slightly for better clarity and comprehension")
+        }
+      }
+      if (hasHesitantPhrases) {
+        analysis.suggestions.push("Replace hesitant phrases with confident statements")
+      }
+      if (!hasClearStructure) {
+        analysis.suggestions.push("Use transition words to create clear structure")
+      }
+      if (!hasExamples) {
+        analysis.suggestions.push("Include specific examples to support your points")
+      }
+      if (wordCount < 50) {
+        analysis.suggestions.push("Provide more detailed responses for better analysis")
+      }
+      if (wordCount > 300) {
+        analysis.suggestions.push("Consider being more concise while maintaining clarity")
+      }
 
       setSpeechAnalysis(analysis)
 
-      const response = `**Speech Analysis Complete!** 🎤\n\n**Word Count:** ${analysis.wordCount}\n**Estimated Duration:** ${analysis.estimatedDuration} minutes\n**Filler Words:** ${analysis.hasFillerWords ? '⚠️' : '✅'}\n**Confidence Score:** ${analysis.confidence}%\n\n**Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}`
+      const response = `**Speech Analysis Complete!** 🎤\n\n**Performance Metrics:**\n• Word Count: ${analysis.wordCount}\n• Estimated Duration: ~${analysis.estimatedDuration} minutes\n• Speaking Rate: ${analysis.speakingRate} WPM ${analysis.isOptimalRate ? '✅' : '⚠️'}\n• Confidence Score: ${analysis.confidence}%\n\n**Analysis Results:**\n• Filler Words: ${analysis.fillerWordCount > 0 ? `⚠️ ${analysis.fillerWordCount} detected` : '✅ None detected'}\n• Structure: ${analysis.hasClearStructure ? '✅ Clear' : '⚠️ Could improve'}\n• Examples: ${analysis.hasExamples ? '✅ Good use' : '⚠️ Could add more'}\n• Confidence: ${analysis.hasConfidentPhrases ? '✅ Strong' : '⚠️ Could strengthen'}\n\n**Key Suggestions:**\n${analysis.suggestions.map(s => `• ${s}`).join('\n')}\n\n**Pro Tips for Interviews:**\n• Practice the STAR method for behavioral questions\n• Record yourself and review for improvement\n• Focus on breathing and pacing\n• Use power poses before speaking`
       
       // Add success animation delay
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -450,7 +562,7 @@ export default function EnhancedChatPage() {
       const thinkingTime = Math.min(Math.max(content.length * 50, 1000), 3000)
       await new Promise(resolve => setTimeout(resolve, thinkingTime))
       
-      const response = generateAIResponse(content.trim())
+      const response = await generateAIResponse(content.trim())
       addMessage("ai", response)
     } catch (error) {
       console.error("Error sending message:", error)
@@ -460,26 +572,84 @@ export default function EnhancedChatPage() {
     }
   }
 
-  const generateAIResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase()
-    
-    if (message.includes("resume") || message.includes("cv")) {
-      return "I can help you with resume analysis! Switch to the 'Resume Analysis' tab to get started. I'll review your resume and provide feedback on structure, content, and optimization."
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
+    try {
+      const message = userMessage.toLowerCase()
+      
+      // Call the Gemini AI service for real responses
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'career-advice',
+          data: {
+            question: userMessage,
+            context: `User is asking about: ${userMessage}. Provide helpful, actionable career advice.`
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.error) {
+        throw new Error(result.error)
+      }
+
+      return result.text || "I'm sorry, I couldn't generate a response at the moment. Please try again."
+      
+    } catch (error) {
+      console.error('Error calling Gemini API:', error)
+      
+      // Fallback to smart mock responses based on message content
+      const message = userMessage.toLowerCase()
+      
+      if (message.includes("resume") || message.includes("cv")) {
+        return "I can help you with resume analysis! Switch to the 'Resume Analysis' tab to get started. I'll review your resume and provide feedback on structure, content, and optimization.\n\n**Pro Tip:** A well-optimized resume should include:\n• Clear contact information\n• Professional summary\n• Relevant work experience\n• Education and certifications\n• Key skills and competencies"
+      }
+      
+      if (message.includes("speech") || message.includes("speaking") || message.includes("interview")) {
+        return "Great question! I can help you improve your speaking skills and interview performance. Use the 'Speech Analysis' tab to analyze your speech patterns, or let's practice with interview questions!\n\n**Key Areas to Focus On:**\n• Speaking clarity and pace\n• Confidence and body language\n• Answer structure (STAR method)\n• Reducing filler words\n• Practice and preparation"
+      }
+      
+      if (message.includes("salary") || message.includes("negotiate")) {
+        return "Salary negotiation is crucial! Here are some tips:\n\n**Research & Preparation:**\n• Research market rates for your role and location\n• Understand your value and achievements\n• Practice your pitch beforehand\n\n**During Negotiation:**\n• Be confident but flexible\n• Focus on total compensation, not just salary\n• Highlight your unique contributions\n• Have a target range in mind\n\n**Pro Tip:** Always negotiate from a position of strength - wait until you have an offer!"
+      }
+      
+      if (message.includes("confidence") || message.includes("nervous")) {
+        return "Interview confidence comes with preparation! Here's how to build it:\n\n**Preparation Strategies:**\n• Practice common questions out loud\n• Record yourself and review\n• Research the company thoroughly\n• Prepare your success stories\n\n**Before the Interview:**\n• Use power poses (2 minutes)\n• Take deep breaths\n• Focus on your achievements\n• Remember: they want to hire you!\n\n**Mindset Shift:**\nThink of it as a conversation, not an interrogation. You're also evaluating if this role is right for you!"
+      }
+      
+      if (message.includes("behavioral") || message.includes("star")) {
+        return "Behavioral questions are perfect for the STAR method! Here's how to structure your answers:\n\n**STAR Method:**\n• **Situation:** Set the context\n• **Task:** Describe your responsibility\n• **Action:** Explain what you did\n• **Result:** Share the outcome\n\n**Example Questions:**\n• Tell me about a time you overcame a challenge\n• Describe a situation where you led a team\n• Give an example of a goal you achieved\n\n**Pro Tip:** Always end with a positive result and what you learned!"
+      }
+      
+      if (message.includes("thank") || message.includes("thanks")) {
+        return "You're very welcome! I'm here to help you succeed in your career journey. Feel free to ask me anything about:\n\n• Interview preparation\n• Resume optimization\n• Career development\n• Salary negotiation\n• Industry insights\n\nWhat would you like to work on next?"
+      }
+      
+      return "I'm here to help you with your career and interview preparation! I can assist with resume analysis, speech improvement, and general career advice. What specific area would you like to focus on today?\n\n**I can help with:**\n• Resume optimization and ATS compatibility\n• Interview preparation and practice\n• Speech analysis and improvement\n• Career planning and development\n• Salary negotiation strategies\n\nJust let me know what you'd like to work on!"
     }
-    
-    if (message.includes("speech") || message.includes("speaking") || message.includes("interview")) {
-      return "Great question! I can help you improve your speaking skills and interview performance. Use the 'Speech Analysis' tab to analyze your speech patterns, or let's practice with interview questions!"
+  }
+
+  const checkAiServiceStatus = async () => {
+    try {
+      const response = await fetch('/api/gemini', { method: 'GET' })
+      if (response.ok) {
+        const result = await response.json()
+        setAiServiceStatus(result.hasGeminiKey ? 'available' : 'unavailable')
+      } else {
+        setAiServiceStatus('unavailable')
+      }
+    } catch (error) {
+      console.log('Could not check AI service status:', error)
+      setAiServiceStatus('unavailable')
     }
-    
-    if (message.includes("salary") || message.includes("negotiate")) {
-      return "Salary negotiation is crucial! Here are some tips:\n\n• Research market rates for your role and location\n• Highlight your unique value and achievements\n• Practice your pitch beforehand\n• Be confident but flexible\n• Consider total compensation, not just salary\n\nWould you like me to help you prepare for a specific salary negotiation?"
-    }
-    
-    if (message.includes("confidence") || message.includes("nervous")) {
-      return "Interview confidence comes with preparation! Here's how to build it:\n\n• Practice common questions out loud\n• Record yourself and review\n• Use power poses before interviews\n• Focus on your achievements\n• Remember: they want to hire you!\n\nLet's practice with some interview questions to build your confidence!"
-    }
-    
-    return "I'm here to help you with your career and interview preparation! I can assist with resume analysis, speech improvement, and general career advice. What specific area would you like to focus on today?"
   }
 
   return (
@@ -597,6 +767,32 @@ export default function EnhancedChatPage() {
             {/* Chat Tab */}
             <TabsContent value="chat" className="flex-1 flex flex-col p-0">
               <div className="flex-1 flex flex-col">
+                {/* AI Service Status Indicator */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="px-4 py-2 border-b border-border bg-muted/20"
+                >
+                  <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        aiServiceStatus === 'available' ? 'bg-green-500' : 
+                        aiServiceStatus === 'checking' ? 'bg-yellow-500' : 'bg-red-500'
+                      }`} />
+                      <span className="text-sm text-muted-foreground">
+                        {aiServiceStatus === 'available' ? 'AI Service Available' :
+                         aiServiceStatus === 'checking' ? 'Checking AI Service...' : 'AI Service Unavailable'}
+                      </span>
+                    </div>
+                    {aiServiceStatus === 'unavailable' && (
+                      <div className="text-xs text-muted-foreground">
+                        Using enhanced local analysis
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+
                 {/* Messages Area */}
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   <div className="max-w-4xl mx-auto space-y-6">
@@ -964,7 +1160,7 @@ export default function EnhancedChatPage() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>Word Count: {speechAnalysis.wordCount}</div>
                           <div>Duration: ~{speechAnalysis.estimatedDuration} min</div>
-                          <div>Filler Words: {speechAnalysis.hasFillerWords ? '⚠️' : '✅'}</div>
+                          <div>Filler Words: {speechAnalysis.fillerWordCount > 0 ? `⚠️ ${speechAnalysis.fillerWordCount} detected` : '✅ None detected'}</div>
                           <div>Confidence: {speechAnalysis.confidence}%</div>
                         </div>
                         {speechAnalysis.suggestions.length > 0 && (

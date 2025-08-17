@@ -4,16 +4,20 @@ import { NextRequest, NextResponse } from 'next/server';
 let speechService: any = null;
 
 async function getSpeechService() {
-  if (!speechService) {
-    try {
-      const { GoogleCloudSpeechService } = await import('@/lib/google-cloud-speech');
-      speechService = new GoogleCloudSpeechService();
-    } catch (error) {
-      console.error('Failed to load Google Cloud Speech service:', error);
-      throw new Error('Speech service not available');
+  try {
+    // Check if required environment variables are set before even importing the service
+    if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_PRIVATE_KEY || !process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
+      console.warn('Google Cloud credentials not configured. Speech features will be disabled.');
+      return null;
     }
+
+    const { GoogleCloudSpeechService } = await import('@/lib/google-cloud-speech');
+    speechService = new GoogleCloudSpeechService();
+    return speechService;
+  } catch (error) {
+    console.error('Failed to load Google Cloud Speech service:', error);
+    return null;
   }
-  return speechService;
 }
 
 export async function POST(request: NextRequest) {
@@ -22,7 +26,7 @@ export async function POST(request: NextRequest) {
     const speechService = await getSpeechService();
     
     // Check if service is available
-    if (!speechService.isServiceAvailable()) {
+    if (!speechService) {
       return NextResponse.json(
         { 
           error: 'Speech service not available',
@@ -41,7 +45,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Speech service initialization failed',
-          message: error instanceof Error ? error.message : 'Please check your Google Cloud credentials' 
+          message: 'Google Cloud Speech service failed to initialize. Please check your environment variables and ensure the Speech-to-Text API is enabled.',
+          code: 'SERVICE_INIT_FAILED'
         },
         { status: 503 }
       );
@@ -195,7 +200,7 @@ export async function GET() {
     const speechService = await getSpeechService();
     
     // Check if service is available
-    if (!speechService.isServiceAvailable()) {
+    if (!speechService) {
       return NextResponse.json({
         service: 'Google Cloud Speech-to-Text',
         status: { 

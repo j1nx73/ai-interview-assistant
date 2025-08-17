@@ -57,6 +57,12 @@ export class GoogleCloudSpeechService {
         return;
       }
 
+      // Explicitly clear any file-based credential environment variables
+      if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        console.log('⚠️ GOOGLE_APPLICATION_CREDENTIALS is set, but we will use explicit credentials instead');
+        // Don't delete the env var, but log that we're not using it
+      }
+
       // Create credentials object from environment variables (for Vercel deployment)
       const credentials = {
         type: 'service_account',
@@ -70,9 +76,18 @@ export class GoogleCloudSpeechService {
         client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLOUD_CLIENT_EMAIL}`
       };
 
+      console.log('🔐 Using explicit credentials from environment variables');
+      console.log('📁 Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
+      console.log('📧 Client Email:', process.env.GOOGLE_CLOUD_CLIENT_EMAIL);
+      console.log('🔑 Private Key Length:', process.env.GOOGLE_CLOUD_PRIVATE_KEY?.length || 0);
+
       this.client = new SpeechClient({
         credentials,
         projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        // Explicitly disable default credential resolution
+        keyFilename: undefined,
+        // Ensure we're not using any default credential resolution
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
       });
 
       // Test the connection

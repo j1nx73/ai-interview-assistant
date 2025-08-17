@@ -68,7 +68,7 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/dashboard
 ## 6. Test the Integration
 
 1. Start your development server: `npm run dev`
-2. Go to `http://localhost:3001/login`
+2. Go to `http://localhost:3000/login`
 3. Try creating a new account
 4. Check your email for confirmation
 5. Sign in with your credentials

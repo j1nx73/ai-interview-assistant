@@ -271,7 +271,7 @@ npm run type-check   # Run TypeScript type checking
 # Kill processes on port 3000
 lsof -ti:3000 | xargs kill -9
 # Or use a different port
-npm run dev -- -p 3001
+npm run dev
 ```
 
 #### 2. **Supabase Connection Issues**

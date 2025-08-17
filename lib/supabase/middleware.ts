@@ -53,29 +53,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  console.log('Middleware: User auth check:', { user: !!user, path: request.nextUrl.pathname })
-
-  // Protected routes - redirect to login if not authenticated
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login")
-  const isPublicRoute = request.nextUrl.pathname === "/"
-  const isApiRoute = request.nextUrl.pathname.startsWith("/api")
-
-  if (!isAuthRoute && !isPublicRoute && !isApiRoute && !user) {
-    console.log('Middleware: Redirecting unauthenticated user to login')
-    const redirectUrl = new URL("/login", request.url)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // If user is logged in and tries to access login page, redirect to dashboard
-  if (isAuthRoute && user) {
-    console.log('Middleware: Redirecting authenticated user from login to dashboard')
-    return NextResponse.redirect(new URL("/dashboard", request.url))
-  }
+  // For now, let client-side handle authentication to avoid conflicts
+  // The client-side auth context will handle redirects based on authentication state
+  console.log('Middleware: Allowing request to continue, client-side will handle auth')
 
   return supabaseResponse
 }

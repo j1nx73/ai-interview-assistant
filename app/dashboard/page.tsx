@@ -1,6 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -64,6 +67,33 @@ const cardVariants = {
 }
 
 export default function DashboardPage() {
+  const { isAuthenticated, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      console.log('Dashboard: User not authenticated, redirecting to login')
+      router.push('/login')
+    }
+  }, [isAuthenticated, loading, router])
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <motion.div 
       className="min-h-screen bg-background"

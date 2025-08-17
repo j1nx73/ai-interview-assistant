@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Loader2, Github, Twitter, Sparkles } from "lucide-react"
+import { Brain, Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2, Shield, Zap, Target, Github, Twitter, Sparkles } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import EnvCheck from "@/components/env-check"
@@ -71,7 +71,6 @@ export default function LoginPage() {
   
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isSignUpLoading, setIsSignUpLoading] = useState(false)
   const [demoMode, setDemoMode] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
@@ -137,6 +136,14 @@ export default function LoginPage() {
     console.log('Auth state changed:', { isAuthenticated, authLoading, user: !!user, session: !!session })
   }, [isAuthenticated, authLoading, user, session])
 
+  // Redirect authenticated users immediately
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log('Login page: User already authenticated, redirecting to dashboard')
+      router.push('/dashboard')
+    }
+  }, [isAuthenticated, authLoading, router])
+
   // Update password strength when password changes
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(signUpForm.password))
@@ -201,8 +208,6 @@ export default function LoginPage() {
       return
     }
 
-    setIsLoading(true)
-    
     try {
       const result = await signIn(loginForm.email, loginForm.password)
       
@@ -247,8 +252,6 @@ export default function LoginPage() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -554,19 +557,10 @@ export default function LoginPage() {
                       <Button 
                         type="submit" 
                         className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl transition-all duration-200" 
-                        disabled={isLoading || !isSupabaseConfigured}
+                        disabled={!isSupabaseConfigured}
                       >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                            Signing in...
-                          </>
-                        ) : (
-                          <>
-                            Sign In
-                            <ArrowRight className="ml-3 h-5 w-5" />
-                          </>
-                        )}
+                        Sign In
+                        <ArrowRight className="ml-3 h-5 w-5" />
                       </Button>
                     </motion.div>
                   </form>
@@ -823,7 +817,6 @@ export default function LoginPage() {
                       >
                         {isSignUpLoading ? (
                           <>
-                            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
                             Creating account...
                           </>
                         ) : (
@@ -884,7 +877,7 @@ export default function LoginPage() {
                 disabled={demoMode}
               >
                 {demoMode ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  <span className="text-white text-xs">Loading...</span>
                 ) : (
                   <Zap className="h-6 w-6 text-white" />
                 )}

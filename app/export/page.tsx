@@ -80,7 +80,6 @@ export default function ExportPage() {
   const [speechAnalysisHistory, setSpeechAnalysisHistory] = useState<any[]>([])
   const [chatHistory, setChatHistory] = useState<any[]>([])
   const [userProfile, setUserProfile] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
   
   const supabase = createClient()
 
@@ -91,12 +90,14 @@ export default function ExportPage() {
 
   const loadUserData = async () => {
     try {
-      setIsLoading(true)
+      if (!supabase) {
+        console.log("Supabase client not available")
+        return
+      }
       
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       if (authError || !user) {
         console.log("User not authenticated")
-        setIsLoading(false)
         return
       }
 
@@ -146,8 +147,6 @@ export default function ExportPage() {
 
     } catch (error) {
       console.error("Error loading user data:", error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -275,14 +274,7 @@ export default function ExportPage() {
         </TabsList>
 
         <TabsContent value="data" className="space-y-6">
-          {isLoading ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading your data...</p>
-              </CardContent>
-            </Card>
-          ) : (
+          
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Export Options */}
             <div className="lg:col-span-2 space-y-6">
@@ -492,7 +484,7 @@ export default function ExportPage() {
               </Card>
             </div>
           </div>
-          )}
+          
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
@@ -577,17 +569,11 @@ export default function ExportPage() {
         <TabsContent value="history" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif">Export History</CardTitle>
-              <CardDescription>Your recent data exports and downloads</CardDescription>
+              <CardTitle>Recent Export History</CardTitle>
+              <CardDescription>Your last few exports and analysis results</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-muted-foreground">Loading export history...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
+              <div className="space-y-4">
                 {resumeAnalysisHistory.length > 0 || speechAnalysisHistory.length > 0 || chatHistory.length > 0 ? (
                   <>
                     {resumeAnalysisHistory.slice(0, 3).map((analysis, index) => (
@@ -645,7 +631,6 @@ export default function ExportPage() {
                   </div>
                 )}
               </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

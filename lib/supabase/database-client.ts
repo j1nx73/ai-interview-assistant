@@ -122,20 +122,140 @@ export class DatabaseServiceClient {
     return data
   }
 
-  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
-    const { data, error } = await this.supabase
-      .from('user_profiles')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating user profile:', error)
-      return null
+  // Database Status Methods
+  async checkDatabaseStatus(): Promise<{ status: string; tables: string[]; errors: string[] }> {
+    const result = {
+      status: 'unknown',
+      tables: [] as string[],
+      errors: [] as string[]
     }
 
-    return data
+    try {
+      // Check if user_profiles table exists
+      const { data: profilesData, error: profilesError } = await this.supabase
+        .from('user_profiles')
+        .select('id')
+        .limit(1)
+
+      if (profilesError) {
+        if (profilesError.code === '42P01') {
+          result.errors.push('user_profiles table does not exist')
+        } else {
+          result.errors.push(`user_profiles table error: ${profilesError.message}`)
+        }
+      } else {
+        result.tables.push('user_profiles')
+      }
+
+      // Check if chat_conversations table exists
+      const { data: conversationsData, error: conversationsError } = await this.supabase
+        .from('chat_conversations')
+        .select('id')
+        .limit(1)
+
+      if (conversationsError) {
+        if (conversationsError.code === '42P01') {
+          result.errors.push('chat_conversations table does not exist')
+        } else {
+          result.errors.push(`chat_conversations table error: ${conversationsError.message}`)
+        }
+      } else {
+        result.tables.push('chat_conversations')
+      }
+
+      // Check if chat_messages table exists
+      const { data: messagesData, error: messagesError } = await this.supabase
+        .from('chat_messages')
+        .select('id')
+        .limit(1)
+
+      if (messagesError) {
+        if (messagesError.code === '42P01') {
+          result.errors.push('chat_messages table does not exist')
+        } else {
+          result.errors.push(`chat_messages table error: ${messagesError.message}`)
+        }
+      } else {
+        result.tables.push('chat_messages')
+      }
+
+      // Determine overall status
+      if (result.errors.length === 0) {
+        result.status = 'healthy'
+      } else if (result.tables.length > 0) {
+        result.status = 'partial'
+      } else {
+        result.status = 'unconfigured'
+      }
+
+    } catch (error) {
+      result.errors.push(`Unexpected error: ${error}`)
+      result.status = 'error'
+    }
+
+    return result
+  }
+
+  async createUserProfile(profile: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>): Promise<UserProfile | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('user_profiles')
+        .insert(profile)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating user profile:', error)
+        
+        // Provide specific error messages for common issues
+        if (error.code === '42P01') {
+          console.error('Table "user_profiles" does not exist. Please run the database setup script.')
+        } else if (error.code === '23505') {
+          console.error('User profile already exists for this user ID.')
+        } else if (error.code === '23503') {
+          console.error('Foreign key constraint violation. Check if auth.users table exists.')
+        } else {
+          console.error('Database error details:', error)
+        }
+        
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error('Unexpected error creating user profile:', error)
+      return null
+    }
+  }
+
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<{ data: UserProfile | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating user profile:', error)
+        if (error.code === '42P01') {
+          console.error('Table "user_profiles" does not exist. Please run the database setup script.')
+        } else if (error.code === '23505') {
+          console.error('Unique constraint violation. Check for duplicate values.')
+        } else if (error.code === '23503') {
+          console.error('Foreign key constraint violation. Check referenced data.')
+        } else {
+          console.error('Database error details:', error)
+        }
+        return { data: null, error }
+      }
+
+      return { data, error: null }
+    } catch (error) {
+      console.error('Unexpected error updating user profile:', error)
+      return { data: null, error }
+    }
   }
 
   // Interview Session Methods

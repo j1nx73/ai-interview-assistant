@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 import {
   LayoutDashboard,
   Mic,
@@ -13,97 +14,186 @@ import {
   LogOut,
   Download,
   Target,
+  Sparkles,
 } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Speech Analysis", href: "/speech-analysis", icon: Mic },
-  { name: "Resume Analysis", href: "/resume-analysis", icon: FileText },
-  { name: "Train", href: "/train", icon: Target },
-  { name: "Chat Bot", href: "/chat-bot", icon: MessageCircle },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, description: "Overview & analytics" },
+  { name: "Speech Analysis", href: "/speech-analysis", icon: Mic, description: "Practice & feedback" },
+  { name: "Resume Analysis", href: "/resume-analysis", icon: FileText, description: "Optimize your CV" },
+  { name: "Train", href: "/train", icon: Target, description: "Skill building" },
+  { name: "Chat Bot", href: "/chat-bot", icon: MessageCircle, description: "AI assistance" },
 ]
 
 const bottomNavigation = [
-  { name: "Profile Settings", href: "/profile", icon: User },
-  { name: "Export Data", href: "/export", icon: Download },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Profile Settings", href: "/profile", icon: User, description: "Manage account" },
+  { name: "Export Data", href: "/export", icon: Download, description: "Download reports" },
+  { name: "Settings", href: "/settings", icon: Settings, description: "Preferences" },
 ]
+
+const containerVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 },
+}
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { signOut, profile } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-white border-r border-gray-200">
+    <motion.div 
+      className="flex h-screen w-72 flex-col bg-sidebar border-r border-sidebar-border minimal-shadow"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-            <Mic className="h-5 w-5 text-white" />
+      <motion.div 
+        className="flex h-20 items-center px-6 border-b border-sidebar-border"
+        variants={itemVariants}
+      >
+        <div className="flex items-center space-x-3">
+          <motion.div 
+            className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center minimal-shadow"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Sparkles className="h-6 w-6 text-primary-foreground" />
+          </motion.div>
+          <div>
+            <span className="text-xl font-semibold text-sidebar-foreground">AI Interview</span>
+            <span className="block text-xs text-muted-foreground font-medium">Assistant</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">Rewind AI</span>
         </div>
-      </div>
+      </motion.div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
-        {navigation.map((item) => {
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {navigation.map((item, index) => {
           const isActive = pathname === item.href
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`
-                flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                ${
-                  isActive
-                    ? "bg-emerald-50 text-emerald-700 border-r-2 border-emerald-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }
-              `}
-            >
-              <item.icon className={`mr-3 h-5 w-5 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
-              {item.name}
-            </Link>
+            <motion.div key={item.name} variants={itemVariants}>
+              <Link
+                href={item.href}
+                className={`
+                  group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
+                  ${
+                    isActive
+                      ? "bg-primary text-primary-foreground minimal-shadow"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  }
+                `}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`mr-3 h-5 w-5 ${
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
+                  }`}
+                >
+                  <item.icon />
+                </motion.div>
+                <div>
+                  <div className="font-medium">{item.name}</div>
+                  <div className={`text-xs opacity-75 ${isActive ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                    {item.description}
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           )
         })}
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-gray-200 px-4 py-4 space-y-1">
+      <div className="border-t border-sidebar-border px-4 py-4 space-y-2">
         {bottomNavigation.map((item) => {
           const isActive = pathname === item.href
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`
-                flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                ${isActive ? "bg-emerald-50 text-emerald-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
-              `}
-            >
-              <item.icon className={`mr-3 h-5 w-5 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
-              {item.name}
-            </Link>
+            <motion.div key={item.name} variants={itemVariants}>
+              <Link
+                href={item.href}
+                className={`
+                  group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200
+                  ${isActive ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}
+                `}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`mr-3 h-5 w-5 ${
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
+                  }`}
+                >
+                  <item.icon />
+                </motion.div>
+                <div>
+                  <div className="font-medium">{item.name}</div>
+                  <div className={`text-xs opacity-75 ${isActive ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                    {item.description}
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           )
         })}
 
         {/* User Profile */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex items-center px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-              <User className="h-4 w-4 text-emerald-600" />
+        <motion.div 
+          className="mt-4 pt-4 border-t border-sidebar-border"
+          variants={itemVariants}
+        >
+          <div className="flex items-center px-4 py-3 rounded-lg bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors cursor-pointer">
+            <motion.div 
+              className="h-10 w-10 rounded-full bg-primary flex items-center justify-center minimal-shadow"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <User className="h-5 w-5 text-primary-foreground" />
+            </motion.div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-sidebar-foreground">
+                {profile?.full_name || profile?.first_name || 'User'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {profile?.role === 'premium' ? 'Premium User' : 'Free User'}
+              </p>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">Premium User</p>
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg hover:bg-sidebar-accent/50 transition-colors"
+              onClick={handleLogout}
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4 text-muted-foreground" />
+            </motion.button>
           </div>
-          <button className="mt-2 flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors w-full">
-            <LogOut className="mr-3 h-4 w-4 text-gray-400" />
-            Sign Out
-          </button>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }

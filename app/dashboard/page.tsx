@@ -1,3 +1,6 @@
+"use client"
+
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,271 +42,261 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+}
+
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div 
+      className="min-h-screen bg-background"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10">
-        <div className="container mx-auto px-4 py-20 sm:px-6 lg:px-8">
+      <motion.section 
+        className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10"
+        variants={itemVariants}
+      >
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="container mx-auto px-4 py-20 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring" }}
+            >
               <Sparkles className="h-4 w-4" />
               AI-Powered Interview Preparation
-            </div>
-            <h1 className="font-serif text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+            </motion.div>
+            <motion.h1 
+              className="font-serif text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
               Master Your Interview
               <span className="text-primary"> Skills</span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            </motion.h1>
+            <motion.p 
+              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+            >
               Transform your interview performance with AI-driven speech analysis, resume optimization, 
               and personalized coaching. Get real-time feedback and improve your confidence.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            </motion.p>
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
               <Link href="/speech-analysis">
-                <Button size="lg" className="gap-2 text-lg px-8 py-6">
+                <Button size="lg" className="gap-2 text-lg px-8 py-6 minimal-shadow hover:minimal-shadow-hover transition-all duration-300 hover:scale-105">
                   <Play className="h-5 w-5" />
                   Start Free Trial
                 </Button>
               </Link>
               <Link href="#features">
-                <Button variant="outline" size="lg" className="gap-2 text-lg px-8 py-6">
+                <Button variant="outline" size="lg" className="gap-2 text-lg px-8 py-6 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                   <Target className="h-5 w-5" />
                   Learn More
                 </Button>
               </Link>
-            </div>
+            </motion.div>
             
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">10K+</div>
+            <motion.div 
+              className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.6 }}
+            >
+              <motion.div 
+                className="text-center group"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="text-3xl font-bold text-primary mb-2 group-hover:text-primary/80 transition-colors">10K+</div>
                 <div className="text-sm text-muted-foreground">Happy Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">95%</div>
+              </motion.div>
+              <motion.div 
+                className="text-center group"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="text-3xl font-bold text-primary mb-2 group-hover:text-primary/80 transition-colors">95%</div>
                 <div className="text-sm text-muted-foreground">Success Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">50+</div>
+              </motion.div>
+              <motion.div 
+                className="text-center group"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="text-3xl font-bold text-primary mb-2 group-hover:text-primary/80 transition-colors">50+</div>
                 <div className="text-sm text-muted-foreground">Companies</div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
+      <motion.section 
+        id="features" 
+        className="py-20 bg-muted/30"
+        variants={itemVariants}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="font-serif text-4xl font-bold text-foreground mb-4">
               Everything You Need to Succeed
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Our comprehensive platform combines cutting-edge AI technology with proven interview strategies
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Comprehensive tools and features designed to help you excel in any interview scenario
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* Speech Analysis */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Mic className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Speech Analysis</CardTitle>
-                <CardDescription>
-                  AI-powered speech recognition and analysis
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• Real-time speech recognition</li>
-                  <li>• Speaking rate optimization</li>
-                  <li>• Confidence scoring</li>
-                  <li>• Pause pattern analysis</li>
-                </ul>
-                <Link href="/speech-analysis">
-                  <Button className="w-full gap-2">
-                    Try Speech Analysis
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Resume Analysis */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <FileText className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Resume Optimization</CardTitle>
-                <CardDescription>
-                  AI-driven resume analysis and improvement
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• Keyword optimization</li>
-                  <li>• ATS compatibility check</li>
-                  <li>• Content enhancement</li>
-                  <li>• Industry-specific advice</li>
-                </ul>
-                <Link href="/resume-analysis">
-                  <Button className="w-full gap-2">
-                    Optimize Resume
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* AI Interview Coach */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Brain className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">AI Interview Coach</CardTitle>
-                <CardDescription>
-                  Personalized interview preparation guidance
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• Mock interview sessions</li>
-                  <li>• Behavioral question prep</li>
-                  <li>• Industry insights</li>
-                  <li>• Real-time feedback</li>
-                </ul>
-                <Link href="/chat-bot">
-                  <Button className="w-full gap-2">
-                    Chat with AI Coach
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Interview Training */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Target className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Interview Training</CardTitle>
-                <CardDescription>
-                  Practice questions with AI-powered feedback
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• Preset interview questions</li>
-                  <li>• Speech analysis & scoring</li>
-                  <li>• Detailed feedback & tips</li>
-                  <li>• Progress tracking</li>
-                </ul>
-                <Link href="/train">
-                  <Button className="w-full gap-2">
-                    Start Training
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Progress Tracking */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <TrendingUp className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Progress Analytics</CardTitle>
-                <CardDescription>
-                  Track your improvement over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• Performance metrics</li>
-                  <li>• Skill development tracking</li>
-                  <li>• Goal setting</li>
-                  <li>• Detailed reports</li>
-                </ul>
-                <Link href="/progress">
-                  <Button className="w-full gap-2">
-                    View Progress
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Security */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Shield className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Enterprise Security</CardTitle>
-                <CardDescription>
-                  Bank-level security for your data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• End-to-end encryption</li>
-                  <li>• GDPR compliance</li>
-                  <li>• SOC 2 certified</li>
-                  <li>• Regular security audits</li>
-                </ul>
-                <Button variant="outline" className="w-full gap-2">
-                  Learn More
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Integration */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-background">
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Globe className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="font-serif text-xl">Seamless Integration</CardTitle>
-                <CardDescription>
-                  Works with your existing tools
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• API access</li>
-                  <li>• Webhook support</li>
-                  <li>• Custom integrations</li>
-                  <li>• White-label solutions</li>
-                </ul>
-                <Button variant="outline" className="w-full gap-2">
-                  View API Docs
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[
+              {
+                icon: Mic,
+                title: "Speech Analysis",
+                description: "Get real-time feedback on your speaking patterns, pace, and confidence levels.",
+                features: ["Voice tone analysis", "Speaking rate optimization", "Confidence scoring"]
+              },
+              {
+                icon: FileText,
+                title: "Resume Optimization",
+                description: "AI-powered resume analysis with industry-specific recommendations.",
+                features: ["ATS optimization", "Keyword analysis", "Industry insights"]
+              },
+              {
+                icon: Brain,
+                title: "Smart Training",
+                description: "Personalized learning paths based on your performance and goals.",
+                features: ["Adaptive questions", "Progress tracking", "Skill assessment"]
+              },
+              {
+                icon: MessageSquare,
+                title: "AI Chat Assistant",
+                description: "24/7 interview coaching and question practice with AI guidance.",
+                features: ["Instant feedback", "Question bank", "Role-play scenarios"]
+              },
+              {
+                icon: BarChart3,
+                title: "Performance Analytics",
+                description: "Track your progress with detailed insights and improvement areas.",
+                features: ["Progress metrics", "Weakness identification", "Goal setting"]
+              },
+              {
+                icon: Shield,
+                title: "Interview Security",
+                description: "Practice in a safe environment with privacy-focused features.",
+                features: ["Data encryption", "Privacy controls", "Secure storage"]
+              },
+              {
+                icon: FileText,
+                title: "Transcript Generation",
+                description: "Automatic transcription of all your interview practice sessions for review.",
+                features: ["Real-time transcription", "Text editing & export", "Search & highlight"]
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                variants={cardVariants}
+                whileHover={{ 
+                  y: -4,
+                  transition: { type: "spring", stiffness: 300 }
+                }}
+                className="group"
+              >
+                <Card className="h-full border-0 minimal-card hover:minimal-shadow-hover transition-all duration-300">
+                  <CardHeader className="pb-4">
+                    <motion.div 
+                      className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
+                      whileHover={{ rotate: 5 }}
+                    >
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </motion.div>
+                    <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {feature.title}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground text-base leading-relaxed">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {feature.features.map((item, idx) => (
+                        <motion.li 
+                          key={idx}
+                          className="flex items-center text-sm text-muted-foreground"
+                          initial={{ opacity: 0, x: -10 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.1 + idx * 0.05 }}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
+                          {item}
+                        </motion.li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Customer Feedback Section */}
-      <section className="py-20 bg-background">
+      <motion.section 
+        className="py-20 bg-background"
+        variants={itemVariants}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="font-serif text-4xl font-bold text-foreground mb-4">
               What Our Customers Say
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Join thousands of professionals who have transformed their interview skills
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {/* Testimonial 1 */}
@@ -383,7 +376,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="mt-16 text-center">
+          <motion.div 
+            className="mt-16 text-center"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <p className="text-muted-foreground mb-6">Trusted by leading companies worldwide</p>
             <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
               <div className="text-2xl font-bold text-muted-foreground">Google</div>
@@ -392,22 +391,31 @@ export default function DashboardPage() {
               <div className="text-2xl font-bold text-muted-foreground">Meta</div>
               <div className="text-2xl font-bold text-muted-foreground">Netflix</div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* About Founders Section */}
-      <section className="py-20 bg-muted/30">
+      <motion.section 
+        className="py-20 bg-muted/30"
+        variants={itemVariants}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="font-serif text-4xl font-bold text-foreground mb-4">
               Meet Our Founders
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               A team of AI researchers and career development experts passionate about democratizing 
               interview preparation
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {/* Founder 1 */}
@@ -481,7 +489,13 @@ export default function DashboardPage() {
           </div>
 
           {/* Company Story */}
-          <div className="mt-16 text-center max-w-4xl mx-auto">
+          <motion.div 
+            className="mt-16 text-center max-w-4xl mx-auto"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h3 className="font-serif text-2xl font-bold mb-6">Our Story</h3>
             <p className="text-muted-foreground leading-relaxed">
               Founded in 2023, we started with a simple mission: to make professional interview preparation 
@@ -493,21 +507,31 @@ export default function DashboardPage() {
               Today, we're proud to have helped over 10,000 professionals land their dream jobs, 
               with a 95% success rate and partnerships with leading companies worldwide.
             </p>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Contact Us Section */}
-      <section id="contact" className="py-20 bg-background">
+      <motion.section 
+        id="contact" 
+        className="py-20 bg-background"
+        variants={itemVariants}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="font-serif text-4xl font-bold text-foreground mb-4">
               Get in Touch
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Have questions? Want to learn more? We'd love to hear from you.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid gap-12 lg:grid-cols-2">
             {/* Contact Form */}
@@ -616,34 +640,40 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="font-serif text-4xl font-bold mb-4">
-            Ready to Transform Your Interview Skills?
-          </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of professionals who have already improved their interview performance 
-            and landed their dream jobs.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/speech-analysis">
-              <Button size="lg" variant="secondary" className="gap-2 text-lg px-8 py-6">
-                <Play className="h-5 w-5" />
-                Start Free Trial
-              </Button>
-            </Link>
-            <Link href="#contact">
-              <Button size="lg" variant="outline" className="gap-2 text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-                <MessageSquare className="h-5 w-5" />
-                Contact Sales
-              </Button>
-            </Link>
-          </div>
+      <motion.section 
+        className="py-20 bg-gradient-to-r from-primary/10 to-primary/5"
+        variants={itemVariants}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="font-serif text-4xl font-bold text-foreground mb-6">
+              Ready to Transform Your Interview Skills?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Join thousands of successful candidates who have improved their interview performance with AI-powered coaching.
+            </p>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href="/speech-analysis">
+                <Button size="lg" className="gap-2 text-lg px-10 py-6 minimal-shadow hover:minimal-shadow-hover transition-all duration-300">
+                  <Rocket className="h-5 w-5" />
+                  Get Started Now
+                </Button>
+              </Link>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }

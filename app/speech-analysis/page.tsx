@@ -30,7 +30,10 @@ import {
   ArrowRight,
   RefreshCw,
   Sparkles,
+  Copy,
 } from "lucide-react"
+import { SpeechExportButton } from "@/components/export-button"
+import { pdfExportService, SpeechAnalysisData as PDFSpeechData } from "@/lib/pdf-export"
 
 interface SpeechRecognitionResult {
   transcript: string
@@ -282,6 +285,67 @@ export default function SpeechAnalysisPage() {
     
     // Redirect to resume analysis page
     window.location.href = '/resume-analysis'
+  }
+
+  const handleCopyResults = () => {
+    if (!analysisResult) return
+    
+    const resultsText = `
+Speech Analysis Results
+=======================
+
+Transcript: ${analysisResult.analysis.text}
+
+Word Count: ${analysisResult.analysis.wordCount}
+Speaking Rate: ${analysisResult.analysis.speakingRate} WPM
+Confidence: ${analysisResult.analysis.confidence}%
+Quality Score: ${analysisResult.analysis.qualityScore}%
+
+Pause Analysis:
+- Total Pauses: ${analysisResult.analysis.pauseAnalysis.totalPauses}
+- Average Pause Length: ${analysisResult.analysis.pauseAnalysis.averagePauseLength}s
+- Longest Pause: ${analysisResult.analysis.pauseAnalysis.longestPause}s
+
+Language: ${analysisResult.analysis.language}
+Processing Time: ${analysisResult.metadata.processingTime}
+File: ${analysisResult.metadata.fileInfo.name}
+    `.trim()
+    
+    navigator.clipboard.writeText(resultsText)
+    alert('Results copied to clipboard!')
+  }
+
+  const handleExport = async (format: 'pdf' | 'json' | 'txt') => {
+    if (!analysisResult) return
+
+    const speechData: PDFSpeechData = {
+      confidence: analysisResult.analysis.confidence,
+      speakingRate: analysisResult.analysis.speakingRate,
+      fillerWords: analysisResult.analysis.pauseAnalysis.totalPauses,
+      transcript: analysisResult.analysis.text,
+      feedback: [
+        `Confidence level: ${analysisResult.analysis.confidence}%`,
+        `Speaking rate: ${analysisResult.analysis.speakingRate} WPM`,
+        `Total pauses: ${analysisResult.analysis.pauseAnalysis.totalPauses}`,
+        `Quality score: ${analysisResult.analysis.qualityScore}%`,
+        'Practice speaking clearly and confidently',
+        'Work on reducing unnecessary pauses',
+        'Maintain consistent speaking pace'
+      ],
+      timestamp: new Date().toLocaleDateString()
+    }
+
+    try {
+      await pdfExportService.exportSpeechAnalysis(speechData, {
+        format,
+        filename: `speech-analysis-${analysisResult.metadata.fileInfo.name.replace(/\.[^/.]+$/, '')}`,
+        title: 'Speech Analysis Report',
+        subtitle: 'Voice Performance Assessment'
+      })
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Export failed. Please try again.')
+    }
   }
 
   return (
@@ -739,9 +803,10 @@ export default function SpeechAnalysisPage() {
                         </div>
                         
                         <div className="mt-4 flex items-center gap-4">
-                          <Button onClick={exportTranscript} variant="outline" className="gap-2">
-                            <Download className="h-4 w-4" />
-                            Export Results
+                          <SpeechExportButton onExport={handleExport} />
+                          <Button onClick={handleCopyResults} variant="outline" className="gap-2">
+                            <Copy className="h-4 w-4" />
+                            Copy Results
                           </Button>
                           <Button onClick={sendToResumeAnalysis} className="gap-2">
                             <ArrowRight className="h-4 w-4" />

@@ -135,7 +135,7 @@ export default function ExportPage() {
 
       // Load user profile
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("*")
         .eq("id", user.id)
         .single()

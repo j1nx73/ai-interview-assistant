@@ -134,6 +134,36 @@ export function useAuth() {
         return { error }
       }
 
+      // Create user profile if signup was successful
+      if (data.user) {
+        try {
+          const profile = await dbClient.createUserProfile({
+            id: data.user.id,
+            email: data.user.email!,
+            first_name: metadata?.first_name || null,
+            last_name: metadata?.last_name || null,
+            full_name: metadata?.first_name && metadata?.last_name ? `${metadata.first_name} ${metadata.last_name}` : null,
+            avatar_url: null,
+            role: 'user',
+            subscription_tier: null,
+            subscription_expires_at: null,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            preferences: {}
+          })
+
+          if (profile) {
+            setAuthState(prev => ({ ...prev, profile, loading: false }))
+          } else {
+            console.warn('User profile creation failed - this may be due to missing database tables')
+            // Continue without profile for now
+          }
+        } catch (profileError) {
+          console.error('Error creating user profile:', profileError)
+          // Continue even if profile creation fails - user can still sign in
+          console.log('User account created but profile creation failed. Please run the database setup script.')
+        }
+      }
+
       return { data }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -175,16 +205,22 @@ export function useAuth() {
     }
 
     try {
-      const profile = await dbClient.updateUserProfile(authState.user.id, updates)
+      const result = await dbClient.updateUserProfile(authState.user.id, updates)
       
-      if (profile) {
-        setAuthState(prev => ({ ...prev, profile }))
-        return { data: profile }
+      if (result.error) {
+        console.error('Profile update error:', result.error)
+        return { error: { message: result.error.message || 'Failed to update profile' } }
+      }
+      
+      if (result.data) {
+        setAuthState(prev => ({ ...prev, profile: result.data }))
+        return { data: result.data }
       } else {
         return { error: { message: 'Failed to update profile' } }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      console.error('Unexpected error in updateProfile:', error)
       return { error: { message: errorMessage } }
     }
   }

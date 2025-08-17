@@ -29,8 +29,11 @@ import {
   Info,
   Mic,
   ArrowRight,
+  Copy,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { ResumeExportButton } from "@/components/export-button"
+import { pdfExportService, ResumeAnalysisData } from "@/lib/pdf-export"
 
 interface ResumeAnalysis {
   overallScore: number
@@ -1201,6 +1204,80 @@ export default function ResumeAnalysisPage() {
     }
     
     return recommendations
+  }
+
+  const handleCopyResults = () => {
+    if (!analysisResults) return
+    
+    const resultsText = `
+Resume Analysis Results
+=======================
+
+Overall Score: ${analysisResults.overallScore}/100
+
+Summary Section: ${analysisResults.sections.summary.score}/100
+${analysisResults.sections.summary.feedback.join('\n')}
+
+Experience Section: ${analysisResults.sections.experience.score}/100
+${analysisResults.sections.experience.feedback.join('\n')}
+
+Education Section: ${analysisResults.sections.education.score}/100
+${analysisResults.sections.education.feedback.join('\n')}
+
+Skills Section: ${analysisResults.sections.skills.score}/100
+${analysisResults.sections.skills.feedback.join('\n')}
+
+Achievements Section: ${analysisResults.sections.achievements.score}/100
+${analysisResults.sections.achievements.feedback.join('\n')}
+
+Overall Feedback:
+${[
+  ...analysisResults.sections.summary.feedback,
+  ...analysisResults.sections.experience.feedback,
+  ...analysisResults.sections.education.feedback,
+  ...analysisResults.sections.skills.feedback,
+  ...analysisResults.sections.achievements.feedback
+].join('\n')}
+    `.trim()
+    
+    navigator.clipboard.writeText(resultsText)
+    alert('Results copied to clipboard!')
+  }
+
+  const handleExport = async (format: 'pdf' | 'json' | 'txt') => {
+    if (!analysisResults) return
+
+    // Create overall feedback by combining all section feedback
+    const overallFeedback = [
+      ...analysisResults.sections.summary.feedback,
+      ...analysisResults.sections.experience.feedback,
+      ...analysisResults.sections.education.feedback,
+      ...analysisResults.sections.skills.feedback,
+      ...analysisResults.sections.achievements.feedback
+    ]
+
+    const resumeData: ResumeAnalysisData = {
+      score: analysisResults.overallScore,
+      strengths: overallFeedback.filter((f: string) => f.includes('strong') || f.includes('good') || f.includes('excellent')),
+      weaknesses: overallFeedback.filter((f: string) => f.includes('missing') || f.includes('weak') || f.includes('improve')),
+      suggestions: overallFeedback.filter((f: string) => f.includes('consider') || f.includes('try') || f.includes('add')),
+      keywords: analysisResults.keywords || ['resume', 'analysis', 'feedback'],
+      missingKeywords: analysisResults.missingKeywords || ['missing', 'keywords'],
+      overallFeedback: overallFeedback.join('\n'),
+      timestamp: new Date().toLocaleDateString()
+    }
+
+    try {
+      await pdfExportService.exportResumeAnalysis(resumeData, {
+        format,
+        filename: `resume-analysis-${selectedIndustry}-${selectedLevel}`,
+        title: 'Resume Analysis Report',
+        subtitle: `${selectedIndustry} - ${selectedLevel} Level`
+      })
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Export failed. Please try again.')
+    }
   }
 
   return (

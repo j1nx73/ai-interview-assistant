@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Sparkles,
   Copy,
+  BarChart3,
 } from "lucide-react"
 import { SpeechExportButton } from "@/components/export-button"
 import { pdfExportService, SpeechAnalysisData as PDFSpeechData } from "@/lib/pdf-export"
@@ -337,9 +338,14 @@ File: ${analysisResult.metadata.fileInfo.name}
     }
 
     try {
+      // Generate a safe filename using timestamp if metadata is not available
+      const filename = analysisResult.metadata?.fileInfo?.name 
+        ? `speech-analysis-${analysisResult.metadata.fileInfo.name.replace(/\.[^/.]+$/, '')}`
+        : `speech-analysis-${Date.now()}`
+
       await pdfExportService.exportSpeechAnalysis(speechData, {
         format,
-        filename: `speech-analysis-${analysisResult.metadata.fileInfo.name.replace(/\.[^/.]+$/, '')}`,
+        filename,
         title: 'Speech Analysis Report',
         subtitle: 'Voice Performance Assessment'
       })
@@ -652,28 +658,30 @@ File: ${analysisResult.metadata.fileInfo.name}
               </TabsContent>
 
               {/* Analysis Results Tab */}
-              <TabsContent value="results" className="space-y-6">
+              <TabsContent value="results" className="space-y-8">
                 {!analysisResult ? (
                   <Card>
-                    <CardContent className="text-center py-12">
-                      <FileAudio className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No Analysis Results</h3>
-                      <p className="text-muted-foreground">
-                        Record or upload audio to see speech analysis results here
+                    <CardContent className="text-center py-16">
+                      <FileAudio className="h-20 w-20 mx-auto mb-6 text-muted-foreground opacity-50" />
+                      <h3 className="text-xl font-semibold mb-3 text-foreground">No Analysis Results</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        Record or upload audio to see detailed speech analysis results here
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {/* Success Banner */}
-                    <Card className="border-green-200 bg-green-50">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <Card className="border-green-200 bg-green-50/50">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                          </div>
                           <div>
-                            <p className="font-medium text-green-900">Analysis Complete!</p>
-                            <p className="text-sm text-green-700">
-                              Your speech has been successfully analyzed. Review the results below.
+                            <p className="text-lg font-semibold text-green-900">Analysis Complete!</p>
+                            <p className="text-green-700">
+                              Your speech has been successfully analyzed. Review the detailed results below.
                             </p>
                           </div>
                         </div>
@@ -706,30 +714,34 @@ File: ${analysisResult.metadata.fileInfo.name}
                     {/* Speech Metrics */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="font-serif">Speech Metrics</CardTitle>
+                        <CardTitle className="font-serif flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-primary" />
+                          Speech Metrics
+                        </CardTitle>
                         <CardDescription>
-                          Detailed analysis of your speaking patterns
+                          Detailed analysis of your speaking patterns and performance
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
-                            <div className="text-2xl font-bold text-blue-600">
+                      <CardContent className="space-y-8">
+                        {/* Key Metrics Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                            <div className="text-3xl font-bold text-blue-600 mb-2">
                               {analysisResult.analysis.wordCount}
                             </div>
-                            <div className="text-blue-800">Words Spoken</div>
+                            <div className="text-blue-800 font-medium">Words Spoken</div>
                           </div>
-                          <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
-                            <div className="text-2xl font-bold text-green-600">
+                          <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+                            <div className="text-3xl font-bold text-green-600 mb-2">
                               {analysisResult.analysis.speakingRate}
                             </div>
-                            <div className="text-green-800">Words per Minute</div>
+                            <div className="text-green-800 font-medium">Words per Minute</div>
                           </div>
-                          <div className="text-center p-4 rounded-lg bg-purple-50 border border-purple-200">
-                            <div className="text-2xl font-bold text-purple-600">
+                          <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                            <div className="text-3xl font-bold text-purple-600 mb-2">
                               {analysisResult.analysis.confidence}%
                             </div>
-                            <div className="text-purple-800">Recognition Confidence</div>
+                            <div className="text-purple-800 font-medium">Recognition Confidence</div>
                           </div>
                         </div>
 
@@ -796,23 +808,39 @@ File: ${analysisResult.metadata.fileInfo.name}
                           Your speech converted to text
                         </CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-6">
                         <div className="p-4 rounded-lg bg-muted/50 border max-h-60 overflow-y-auto">
-                          <p className="text-sm whitespace-pre-wrap">
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
                             {analysisResult.recognition.transcript || "No transcript available"}
                           </p>
                         </div>
                         
-                        <div className="mt-4 flex items-center gap-4">
-                          <SpeechExportButton onExport={handleExport} />
-                          <Button onClick={handleCopyResults} variant="outline" className="gap-2">
-                            <Copy className="h-4 w-4" />
-                            Copy Results
-                          </Button>
-                          <Button onClick={sendToResumeAnalysis} className="gap-2">
-                            <ArrowRight className="h-4 w-4" />
-                            Use in Resume Analysis
-                          </Button>
+                        {/* Action Buttons */}
+                        <div className="border-t pt-6">
+                          <h6 className="font-medium text-sm text-muted-foreground mb-4">Export & Actions</h6>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <SpeechExportButton 
+                              onExport={handleExport} 
+                              className="w-full"
+                            />
+                            <Button 
+                              onClick={handleCopyResults} 
+                              variant="outline" 
+                              className="gap-2 w-full"
+                              size="sm"
+                            >
+                              <Copy className="h-4 w-4" />
+                              Copy Results
+                            </Button>
+                            <Button 
+                              onClick={sendToResumeAnalysis} 
+                              className="gap-2 w-full"
+                              size="sm"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                              Use in Resume Analysis
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

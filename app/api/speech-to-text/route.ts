@@ -6,8 +6,14 @@ let speechService: any = null;
 async function getSpeechService() {
   try {
     // Check if required environment variables are set before even importing the service
+    // Using the exact variable names from the user's .env file
     if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_PRIVATE_KEY || !process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
       console.warn('Google Cloud credentials not configured. Speech features will be disabled.');
+      console.warn('Required variables: GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, GOOGLE_CLOUD_CLIENT_EMAIL');
+      console.warn('Current values:');
+      console.warn('- GOOGLE_CLOUD_PROJECT_ID:', process.env.GOOGLE_CLOUD_PROJECT_ID ? '✅ Set' : '❌ Missing');
+      console.warn('- GOOGLE_CLOUD_PRIVATE_KEY:', process.env.GOOGLE_CLOUD_PRIVATE_KEY ? '✅ Set' : '❌ Missing');
+      console.warn('- GOOGLE_CLOUD_CLIENT_EMAIL:', process.env.GOOGLE_CLOUD_CLIENT_EMAIL ? '✅ Set' : '❌ Missing');
       return null;
     }
 

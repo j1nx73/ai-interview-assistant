@@ -51,9 +51,14 @@ export class GoogleCloudSpeechService {
   private async initializeClient(): Promise<void> {
     try {
       // Check if we have the required environment variables for Vercel deployment
+      // Using the exact variable names from the user's .env file
       if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_PRIVATE_KEY || !process.env.GOOGLE_CLOUD_CLIENT_EMAIL) {
         console.warn('Google Cloud credentials not configured. Speech features will be disabled.');
-        console.warn('Set GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, and GOOGLE_CLOUD_CLIENT_EMAIL in Vercel environment variables.');
+        console.warn('Required variables: GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_PRIVATE_KEY, GOOGLE_CLOUD_CLIENT_EMAIL');
+        console.warn('Current values:');
+        console.warn('- GOOGLE_CLOUD_PROJECT_ID:', process.env.GOOGLE_CLOUD_PROJECT_ID ? '✅ Set' : '❌ Missing');
+        console.warn('- GOOGLE_CLOUD_PRIVATE_KEY:', process.env.GOOGLE_CLOUD_PRIVATE_KEY ? '✅ Set' : '❌ Missing');
+        console.warn('- GOOGLE_CLOUD_CLIENT_EMAIL:', process.env.GOOGLE_CLOUD_CLIENT_EMAIL ? '✅ Set' : '❌ Missing');
         return;
       }
 
@@ -80,6 +85,7 @@ export class GoogleCloudSpeechService {
       console.log('📁 Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
       console.log('📧 Client Email:', process.env.GOOGLE_CLOUD_CLIENT_EMAIL);
       console.log('🔑 Private Key Length:', process.env.GOOGLE_CLOUD_PRIVATE_KEY?.length || 0);
+      console.log('🔑 Private Key Preview:', process.env.GOOGLE_CLOUD_PRIVATE_KEY?.substring(0, 20) + '...');
 
       this.client = new SpeechClient({
         credentials,

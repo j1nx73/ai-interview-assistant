@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 
 interface PageTransitionProps {
@@ -10,25 +10,20 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [loadingText, setLoadingText] = useState("Loading...")
-  const previousPathname = useRef(pathname)
   const [isNavigating, setIsNavigating] = useState(false)
+  const navigationStartTime = useRef<number>(0)
 
   useEffect(() => {
-    console.log('PageTransition: pathname changed', { 
-      previous: previousPathname.current, 
-      current: pathname,
-      willShowLoading: previousPathname.current !== pathname && previousPathname.current !== ''
-    })
-    
-    // Only show loading if we're actually navigating to a different page
-    if (previousPathname.current !== pathname && previousPathname.current !== '') {
-      console.log('PageTransition: Showing loading animation')
+    const handleStart = () => {
+      console.log('PageTransition: Navigation started')
       setIsNavigating(true)
       setIsLoading(true)
+      navigationStartTime.current = Date.now()
       
-      // Set different loading messages for different page types
+      // Set loading message based on current pathname
       const pageType = pathname.split('/')[1] || 'home'
       const messages = {
         'dashboard': 'Loading Dashboard...',
@@ -45,20 +40,44 @@ export default function PageTransition({ children }: PageTransitionProps) {
       }
       
       setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
+    }
+
+    const handleComplete = () => {
+      console.log('PageTransition: Navigation completed')
+      const elapsed = Date.now() - navigationStartTime.current
+      const minLoadingTime = 500 // Minimum loading time in ms
       
-      // Show loading for a reasonable time to give user feedback
-      const timer = setTimeout(() => {
-        console.log('PageTransition: Hiding loading animation')
+      if (elapsed < minLoadingTime) {
+        // If navigation was too fast, show loading for minimum time
+        setTimeout(() => {
+          setIsLoading(false)
+          setIsNavigating(false)
+        }, minLoadingTime - elapsed)
+      } else {
         setIsLoading(false)
         setIsNavigating(false)
-      }, 800)
-      
-      return () => clearTimeout(timer)
+      }
     }
-    
-    // Update the previous pathname
-    previousPathname.current = pathname
-  }, [pathname])
+
+    // Simulate navigation events since Next.js 13+ doesn't expose them directly
+    // We'll use pathname changes as a proxy for navigation
+    const handlePathnameChange = () => {
+      if (isNavigating) {
+        handleComplete()
+      } else {
+        handleStart()
+      }
+    }
+
+    // Trigger navigation start when pathname changes
+    if (pathname) {
+      handlePathnameChange()
+    }
+
+    return () => {
+      // Cleanup
+    }
+  }, [pathname, isNavigating])
 
   return (
     <>
@@ -148,6 +167,19 @@ export default function PageTransition({ children }: PageTransitionProps) {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Test Button - Remove this in production */}
+      <div className="fixed top-4 right-4 z-40">
+        <button
+          onClick={() => {
+            setIsLoading(true)
+            setTimeout(() => setIsLoading(false), 2000)
+          }}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
+        >
+          Test Loading
+        </button>
+      </div>
       
       {/* Page Content */}
       <AnimatePresence mode="wait">

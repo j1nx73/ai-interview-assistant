@@ -72,7 +72,10 @@ export function useAuth() {
     if (supabase?.auth) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-          console.log('Auth state changed:', event, session?.user?.id)
+          // Only log significant auth state changes
+          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            console.log('Auth state changed:', event, session?.user?.id)
+          }
           
           if (session?.user) {
             // Fetch user profile

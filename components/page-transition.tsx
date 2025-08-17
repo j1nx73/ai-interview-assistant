@@ -18,37 +18,40 @@ export default function PageTransition({ children }: PageTransitionProps) {
   useEffect(() => {
     // Only show loading if we're actually navigating to a different page
     if (previousPathname.current !== pathname && previousPathname.current !== '') {
-      console.log('PageTransition: Navigation detected, showing loading...')
+      // Don't show loading for quick navigation or auth state changes
+      const isQuickNavigation = pathname.includes('login') || pathname.includes('dashboard')
+      const shouldShowLoading = !isQuickNavigation
       
-      // Clear any existing timeout
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
+      if (shouldShowLoading) {
+        // Clear any existing timeout
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current)
+        }
+        
+        // Set loading message based on current pathname
+        const pageType = pathname.split('/')[1] || 'home'
+        const messages = {
+          'dashboard': 'Loading Dashboard...',
+          'chat-bot': 'Opening Chat...',
+          'resume-analysis': 'Loading Resume Analysis...',
+          'speech-analysis': 'Loading Speech Analysis...',
+          'profile': 'Loading Profile...',
+          'settings': 'Loading Settings...',
+          'train': 'Loading Training...',
+          'export': 'Loading Export...',
+          'progress': 'Loading Progress...',
+          'home': 'Loading...',
+          'login': 'Loading Login...'
+        }
+        
+        setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
+        setIsLoading(true)
+        
+        // Show loading for a shorter time for better UX
+        loadingTimeoutRef.current = setTimeout(() => {
+          setIsLoading(false)
+        }, 500) // Reduced from 800ms to 500ms
       }
-      
-      // Set loading message based on current pathname
-      const pageType = pathname.split('/')[1] || 'home'
-      const messages = {
-        'dashboard': 'Loading Dashboard...',
-        'chat-bot': 'Opening Chat...',
-        'resume-analysis': 'Loading Resume Analysis...',
-        'speech-analysis': 'Loading Speech Analysis...',
-        'profile': 'Loading Profile...',
-        'settings': 'Loading Settings...',
-        'train': 'Loading Training...',
-        'export': 'Loading Export...',
-        'progress': 'Loading Progress...',
-        'home': 'Loading...',
-        'login': 'Loading Login...'
-      }
-      
-      setLoadingText(messages[pageType as keyof typeof messages] || 'Loading...')
-      setIsLoading(true)
-      
-      // Show loading for a reasonable time
-      loadingTimeoutRef.current = setTimeout(() => {
-        console.log('PageTransition: Hiding loading...')
-        setIsLoading(false)
-      }, 800)
     }
     
     // Update the previous pathname
